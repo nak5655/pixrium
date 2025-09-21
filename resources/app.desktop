@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Pixrium
+Comment=A spherical painting application
+Type=Application
+Icon=org.deltascope.pixrium
+Exec=pixrium %F
+Terminal=false
+StartupNotify=true
+Categories=COSMIC
+Keywords=COSMIC
+MimeType=
