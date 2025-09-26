@@ -1,9 +1,11 @@
 mod font;
 mod widget;
+mod tool;
 
 use glam::vec2;
 use iced::border::Radius;
 use iced::widget::{button, center, column, container, row, shader, text, Space};
+use iced::Length::Fill;
 use iced::{
     alignment, window, Alignment, Background, Border, Color, Font, Length, Theme,
 };
@@ -17,6 +19,7 @@ use std::f32::consts::PI;
 use std::path::PathBuf;
 use std::sync::Arc;
 use widget::sphere_canvas::sphere_canvas;
+use tool::Tool;
 
 #[cfg(windows)]
 const SAMPLE_IMAGE_BYTES: &[u8] = include_bytes!("..\\resources\\images\\sample.png");
@@ -40,6 +43,8 @@ enum Message {
     SphereCanvasAovChanged(f32),
     SphereCanvasLookAtChanged(glam::Vec2),
 
+    ChangeTool(Tool),
+
     Exit,
 }
 
@@ -53,6 +58,7 @@ struct App {
     image: Arc<image::DynamicImage>,
     aov: f32,
     look_at: glam::Vec2,
+    current_tool: Tool,
 }
 
 impl App {
@@ -64,6 +70,7 @@ impl App {
             image: Arc::new(img),
             aov: 1.0,
             look_at: vec2(0.0, 0.0),
+            current_tool: Tool::Move,
         }
     }
 
@@ -89,6 +96,11 @@ impl App {
             }
             Message::SphereCanvasLookAtChanged(look_at) => {
                 self.look_at = look_at;
+                Task::none()
+            }
+
+            Message::ChangeTool(tool) => {
+                self.current_tool = tool;
                 Task::none()
             }
         }
@@ -121,10 +133,14 @@ impl App {
             ),
             row![
                 column![
-                    // pen
-                    Self::tool_button(&'\u{eb04}').on_press(Message::Exit),
-                    // eraser
-                    Self::tool_button(&'\u{eb8b}'),
+                    self.tool_button(Tool::Move, &'\u{ec2e}'),
+                    self.tool_button(Tool::Object, &'\u{f265}'),
+                    self.tool_button(Tool::Node, &'\u{ebbc}'),
+                    self.tool_button(Tool::Select, &'\u{f7a0}'),
+                    self.tool_button(Tool::Pen, &'\u{eb04}'),
+                    self.tool_button(Tool::Brush, &'\u{ebb8}'),
+                    self.tool_button(Tool::Eraser, &'\u{eb8b}'),
+                    self.tool_button(Tool::Zoom, &'\u{fdaa}'),
                 ],
                 shader(sphere_canvas(
                     self.image.clone(),
@@ -202,35 +218,40 @@ impl App {
         }
     }
 
-    fn tool_button_style(_: &Theme, status: button::Status) -> button::Style {
-        match status
-        {
-            button::Status::Pressed => button::Style {
-                background: Some(Background::Color(Color::from_rgb8(60, 60, 200))),
-                text_color: Color::from_rgb8(255, 255, 255),
-                ..button::Style::default()
-            },
-            button::Status::Hovered => button::Style {
-                background: Some(Background::Color(Color::from_rgb8(120, 120, 220))),
-                text_color: Color::from_rgb8(255, 255, 255),
-                ..button::Style::default()
-            },
-            button::Status::Active => button::Style {
-                background: None,
-                text_color: Color::from_rgb8(60, 60, 60),
-                ..button::Style::default()
-            },
-            button::Status::Disabled => button::Style {
-                background: None,
-                text_color: Color::from_rgb8(200, 200, 200),
-                ..button::Style::default()
-            },
+    fn tool_button_style(&self, tool: tool::Tool) -> impl Fn(&Theme, button::Status) -> button::Style + '_  {
+        move |_, status| {
+            if status == button::Status::Pressed || self.current_tool == tool {
+                button::Style {
+                    background: Some(Background::Color(Color::from_rgb8(60, 60, 200))),
+                    text_color: Color::from_rgb8(255, 255, 255),
+                    ..button::Style::default()
+                }
+            } else if status == button::Status::Hovered {
+                button::Style {
+                    background: Some(Background::Color(Color::from_rgb8(120, 120, 220))),
+                    text_color: Color::from_rgb8(255, 255, 255),
+                    ..button::Style::default()
+                }
+            } else if status == button::Status::Active {
+                button::Style {
+                    background: None,
+                    text_color: Color::from_rgb8(60, 60, 60),
+                    ..button::Style::default()
+                }
+            } else {
+                button::Style {
+                    background: None,
+                    text_color: Color::from_rgb8(200, 200, 200),
+                    ..button::Style::default()
+                }
+            }
         }
     }
 
-    fn tool_button(icon_codepoint: &'_ char) -> button::Button<'_, Message, iced::Theme, iced::Renderer> {
+    fn tool_button(&self, tool: Tool, icon_codepoint: &'_ char) -> button::Button<'_, Message, iced::Theme, iced::Renderer> {
         button(text(icon_codepoint).font(font::icon_font()).size(32))
-            .style(Self::tool_button_style)
+            .style(self.tool_button_style(tool))
+            .on_press(Message::ChangeTool(tool))
     }
 
     fn rad2degree(rad: f32) -> f32 {
