@@ -1,70 +1,61 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
-use glam::{vec2, vec3, Quat, Vec2, Vec3};
+use glam::{Vec2, Vec3, vec2, vec3};
 use iced::advanced::graphics::core::event;
-use iced::mouse::{Button, ScrollDelta};
-use iced::widget::shader::{self, wgpu};
-use iced::{mouse, Rectangle};
+use iced::mouse::Button;
+use iced::widget::shader;
+use iced::widget::shader::wgpu;
+use iced::{Rectangle, mouse};
 use image::{EncodableLayout, GenericImageView};
 
 pub fn sphere_canvas<'a, Message>(
     image: Arc<image::DynamicImage>,
-    on_aov_change: impl Fn(f32) -> Message + 'a,
-    on_look_at_change: impl Fn(glam::Vec2) -> Message + 'a,
-) -> SphereCanvas<'a, Message>
-where
-    Message: Clone,
-{
-    SphereCanvas::new(image, on_aov_change, on_look_at_change)
+    state: Arc<RwLock<SphereCanvasState>>,
+) -> SphereCanvas<'a, Message> {
+    SphereCanvas::new(image, state)
+}
+
+#[derive(Debug, Clone)]
+pub enum SphereCanvasMessage {
+    MousePressed {
+        button: Button,
+        position: Option<Vec2>,
+    },
+    MouseReleased {
+        button: Button,
+        position: Option<Vec2>,
+    },
+    MouseMoved {
+        position: Vec2,
+    },
+    MouseWheel {
+        delta: f32,
+    },
+    BoundsChanged(Rectangle),
 }
 
 pub struct SphereCanvas<'a, Message> {
-    pub image: Arc<image::DynamicImage>,
-    on_aov_change: Box<dyn Fn(f32) -> Message + 'a>,
-    on_look_at_change: Box<dyn Fn(glam::Vec2) -> Message + 'a>,
+    image: Arc<image::DynamicImage>,
+    state: Arc<RwLock<SphereCanvasState>>,
+    on_event: Option<Box<dyn Fn(SphereCanvasMessage) -> Message + 'a>>,
 }
 
-impl<'a, Message: Clone> SphereCanvas<'a, Message> {
-    pub fn new<F, G>(
-        image: Arc<image::DynamicImage>,
-        on_aov_change: F,
-        on_look_at_cahnge: G,
-    ) -> Self
-    where
-        F: 'a + Fn(f32) -> Message,
-        G: 'a + Fn(glam::Vec2) -> Message,
-    {
+impl<'a, Message> SphereCanvas<'a, Message> {
+    pub fn new(image: Arc<image::DynamicImage>, state: Arc<RwLock<SphereCanvasState>>) -> Self {
         SphereCanvas {
             image: image,
-            on_aov_change: Box::new(on_aov_change),
-            on_look_at_change: Box::new(on_look_at_cahnge),
+            state: state,
+            on_event: None,
         }
     }
 
-    fn on_aov_changed(
-        &self,
-        state: &SphereCanvasState,
-        shell: &mut iced::advanced::Shell<'_, Message>,
-    ) {
-        shell.publish((self.on_aov_change)(state.aov));
-    }
-
-    fn on_look_at_changed(
-        &self,
-        state: &SphereCanvasState,
-        shell: &mut iced::advanced::Shell<'_, Message>,
-    ) {
-        let x = state.look_at.z.atan2(state.look_at.x);
-        let y = state
-            .look_at
-            .y
-            .atan2((state.look_at.x.powi(2) + state.look_at.z.powi(2)).sqrt());
-
-        shell.publish((self.on_look_at_change)(vec2(x, y)));
+    pub fn on_event(mut self, f: impl Fn(SphereCanvasMessage) -> Message + 'static) -> Self {
+        self.on_event = Some(Box::new(f));
+        self
     }
 }
 
-impl<'a, Message: Clone> shader::Program<Message> for SphereCanvas<'a, Message> {
+impl<'a, Message> shader::Program<Message> for SphereCanvas<'a, Message> {
     type State = SphereCanvasState;
     type Primitive = SphereCanvasPrimitive;
 
@@ -92,94 +83,91 @@ impl<'a, Message: Clone> shader::Program<Message> for SphereCanvas<'a, Message> 
         state: &mut Self::State,
         event: iced::widget::shader::Event,
         bounds: Rectangle,
-        _cursor: iced::advanced::mouse::Cursor,
-        shell: &mut iced::advanced::Shell<'_, Message>,
+        cursor: iced::advanced::mouse::Cursor,
+        shell: &mut iced::advanced::Shell<Message>,
     ) -> (
         iced::advanced::graphics::core::event::Status,
         Option<Message>,
     ) {
-        if _cursor.is_over(bounds) == false && !state.mouse_pressed {
+        if let Ok(read_state) = self.state.try_read() {
+            read_state.clone_into(state);
+        }
+
+        if state.viewport_bounds != bounds {
+            if let Some(f) = self.on_event.as_ref() {
+                shell.publish(f(SphereCanvasMessage::BoundsChanged(bounds)))
+            };
+        }
+
+        match event {
+            shader::Event::Mouse(mouse::Event::ButtonPressed(button)) => {
+                if cursor.is_over(bounds) {
+                    if let Some(f) = self.on_event.as_ref() {
+                        shell.publish(f(SphereCanvasMessage::MousePressed {
+                            button,
+                            position: cursor.position().map(|p| vec2(p.x, p.y)),
+                        }))
+                    };
+                }
+            }
+            shader::Event::Mouse(mouse::Event::ButtonReleased(button)) => {
+                if let Some(f) = self.on_event.as_ref() {
+                    shell.publish(f(SphereCanvasMessage::MouseReleased {
+                        button,
+                        position: cursor.position().map(|p| vec2(p.x, p.y)),
+                    }))
+                };
+            }
+            shader::Event::Mouse(mouse::Event::CursorMoved { position }) => {
+                if let Some(f) = self.on_event.as_ref() {
+                    shell.publish(f(SphereCanvasMessage::MouseMoved {
+                        position: vec2(position.x, position.y),
+                    }))
+                };
+            }
+            shader::Event::Mouse(mouse::Event::WheelScrolled { delta }) => {
+                let delta_y = match delta {
+                    mouse::ScrollDelta::Lines { x: _, y } => y,
+                    mouse::ScrollDelta::Pixels { x: _, y } => y / 5.0,
+                };
+                if let Some(f) = self.on_event.as_ref() {
+                    shell.publish(f(SphereCanvasMessage::MouseWheel { delta: delta_y }))
+                };
+            }
+            _ => (),
+        };
+
+        if cursor.is_over(bounds) == false && state.mouse_button.is_none() {
             return (event::Status::Ignored, None);
         }
 
-        let ret = match event {
-            shader::Event::Mouse(mouse::Event::ButtonPressed(Button::Left)) => {
-                state.mouse_pressed = true;
-                (event::Status::Captured, None)
-            }
-            shader::Event::Mouse(mouse::Event::ButtonReleased(Button::Left)) => {
-                state.mouse_pressed = false;
-                (event::Status::Captured, None)
-            }
-            shader::Event::Mouse(mouse::Event::CursorMoved { position }) => {
-                state.mouse_delta = vec2(
-                    position.x - state.mouse_point_prev.x,
-                    position.y - state.mouse_point_prev.y,
-                );
-                state.mouse_point_prev = vec2(position.x, position.y);
-                (event::Status::Captured, None)
-            }
-            shader::Event::Mouse(mouse::Event::WheelScrolled {
-                delta: ScrollDelta::Lines { x: _, y },
-            }) => {
-                state.aov = state.aov - y / 10.0;
-                self.on_aov_changed(state, shell);
-                (event::Status::Captured, None)
-            }
-            shader::Event::Mouse(mouse::Event::WheelScrolled {
-                delta: ScrollDelta::Pixels { x: _, y },
-            }) => {
-                state.aov = state.aov - y / 50.0;
-                self.on_aov_changed(state, shell);
-                (event::Status::Captured, None)
-            }
-            _ => (event::Status::Ignored, None),
-        };
-
-        if state.mouse_pressed {
-            let yaw = state.mouse_delta.x / bounds.width;
-            let pitch = -state.mouse_delta.y / bounds.width;
-            let quat = Quat::from_axis_angle(state.up, yaw)
-                .mul_quat(Quat::from_axis_angle(state.right, -pitch));
-
-            state.look_at = quat.mul_vec3(state.look_at).normalize();
-
-            // 視点(極座標)ベクトルの接平面の右ベクトルを求める(視点右方向のベクトル)
-            // x軸との角度をxz平面で考える
-            let mut phi = glam::vec3(state.look_at.x, 0., state.look_at.z).angle_between(glam::Vec3::X);
-            if state.look_at.z < 0. {
-                phi = -phi; // z軸が負なら角度も負にする
-            }
-            state.right = glam::vec3(-phi.sin(), 0., phi.cos()).normalize();
-            // 接平面の上ベクトルは視点ベクトルから見て右ベクトルと直交する
-            state.up = state.right.cross(state.look_at).normalize();
-
-            self.on_look_at_changed(state, shell);
-
-            // consume delta
-            state.mouse_delta = vec2(0.0, 0.0);
-        }
-
-        ret
+        (event::Status::Ignored, None)
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct SphereCanvasState {
-    mouse_pressed: bool,
-    mouse_point_prev: Vec2,
-    mouse_delta: Vec2,
-    aov: f32,
-    look_at: Vec3,
-    up: Vec3,
-    right: Vec3,
+    pub mouse_button: Option<Button>,
+    pub mouse_point: Vec2,
+    pub mouse_point_prev: Vec2,
+    pub mouse_delta: Vec2,
+    pub mouse_wheel_delta: f32,
+    pub viewport_bounds: Rectangle,
+    pub aov: f32,
+    pub look_at: Vec3,
+    pub up: Vec3,
+    pub right: Vec3,
 }
 
 impl Default for SphereCanvasState {
     fn default() -> Self {
         Self {
-            mouse_pressed: false,
+            mouse_button: None,
+            mouse_point: vec2(0., 0.),
             mouse_point_prev: vec2(0., 0.),
             mouse_delta: vec2(0., 0.),
+            mouse_wheel_delta: 0.0,
+            viewport_bounds: Rectangle::default(),
             aov: 1.0,
             look_at: vec3(1., 0., 0.),
             up: vec3(0., 1., 0.),

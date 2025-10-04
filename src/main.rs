@@ -1,14 +1,13 @@
 mod font;
-mod widget;
 mod tool;
+mod widget;
 
-use glam::vec2;
-use iced::border::Radius;
-use iced::widget::{button, center, column, container, row, shader, text, Space};
+use glam::{Vec3, vec2};
 use iced::Length::Fill;
-use iced::{
-    alignment, window, Alignment, Background, Border, Color, Font, Length, Theme,
-};
+use iced::border::Radius;
+use iced::event::Status;
+use iced::widget::{Space, button, center, column, container, row, shader, text};
+use iced::{Alignment, Background, Border, Color, Font, Length, Theme, alignment, window};
 use iced::{Element, Task};
 use iced_aw::menu::{Item, Menu};
 use iced_aw::{menu_bar, menu_items};
@@ -17,9 +16,13 @@ use image::{self, ImageReader};
 use rfd;
 use std::f32::consts::PI;
 use std::path::PathBuf;
-use std::sync::Arc;
-use widget::sphere_canvas::sphere_canvas;
+use std::sync::{Arc, Mutex, RwLock};
 use tool::Tool;
+use widget::sphere_canvas::sphere_canvas;
+
+use crate::tool::ToolHandle;
+use crate::tool::pan::PanMessage;
+use crate::widget::sphere_canvas::{SphereCanvasMessage, SphereCanvasState};
 
 #[cfg(windows)]
 const SAMPLE_IMAGE_BYTES: &[u8] = include_bytes!("..\\resources\\images\\sample.png");
@@ -40,10 +43,9 @@ enum Message {
     OpenFile,
     FileOpened(Result<PathBuf, Error>),
 
-    SphereCanvasAovChanged(f32),
-    SphereCanvasLookAtChanged(glam::Vec2),
+    SphereCanvasMessage(widget::sphere_canvas::SphereCanvasMessage),
 
-    ChangeTool(Tool),
+    ChangeTool(ToolHandle),
 
     Exit,
 }
@@ -56,21 +58,31 @@ enum Error {
 struct App {
     image_path: PathBuf,
     image: Arc<image::DynamicImage>,
-    aov: f32,
-    look_at: glam::Vec2,
-    current_tool: Tool,
+
+    canvas_state: Arc<RwLock<SphereCanvasState>>,
+
+    current_tool: ToolHandle,
+    pan_tool: ToolHandle,
+    zoom_tool: ToolHandle,
 }
 
 impl App {
     fn new() -> Self {
         let img = image::load_from_memory(SAMPLE_IMAGE_BYTES).unwrap();
 
+        let pan_tool = tool::ToolHandle {
+            handle: Arc::new(tool::pan::PanTool::new()),
+        };
+
         Self {
             image_path: PathBuf::new(),
             image: Arc::new(img),
-            aov: 1.0,
-            look_at: vec2(0.0, 0.0),
-            current_tool: Tool::Move,
+            canvas_state: Arc::new(RwLock::new(SphereCanvasState::default())),
+            current_tool: pan_tool.clone(),
+            pan_tool: pan_tool.clone(),
+            zoom_tool: tool::ToolHandle {
+                handle: Arc::new(tool::zoom::ZoomTool::new()),
+            },
         }
     }
 
@@ -90,12 +102,86 @@ impl App {
             }
             Message::Exit => window::get_latest().and_then(window::close),
 
-            Message::SphereCanvasAovChanged(aov) => {
-                self.aov = aov;
-                Task::none()
-            }
-            Message::SphereCanvasLookAtChanged(look_at) => {
-                self.look_at = look_at;
+            Message::SphereCanvasMessage(msg) => {
+                match msg {
+                    widget::sphere_canvas::SphereCanvasMessage::MousePressed {
+                        button,
+                        position,
+                    } => {
+                        if let Ok(mut state) = self.canvas_state.write() {
+                            state.mouse_button = Some(button);
+                            state.mouse_delta = vec2(0.0, 0.0);
+                        }
+
+                        let mut status = self
+                            .current_tool
+                            .handle
+                            .on_mouse_pressed(&self.canvas_state);
+                        if status == Status::Ignored {
+                            status = self.pan_tool.handle.on_mouse_pressed(&self.canvas_state);
+                        }
+                        if status == Status::Ignored {
+                            status = self.zoom_tool.handle.on_mouse_pressed(&self.canvas_state);
+                        }
+                    }
+                    widget::sphere_canvas::SphereCanvasMessage::MouseReleased {
+                        button,
+                        position,
+                    } => {
+                        if let Ok(mut state) = self.canvas_state.write() {
+                            state.mouse_button = None;
+                        }
+
+                        let mut status = self
+                            .current_tool
+                            .handle
+                            .on_mouse_released(&self.canvas_state);
+                        if status == Status::Ignored {
+                            status = self.pan_tool.handle.on_mouse_released(&self.canvas_state);
+                        }
+                        if status == Status::Ignored {
+                            status = self.zoom_tool.handle.on_mouse_released(&self.canvas_state);
+                        }
+                    }
+                    widget::sphere_canvas::SphereCanvasMessage::MouseMoved { position } => {
+                        if let Ok(mut state) = self.canvas_state.write() {
+                            state.mouse_delta = vec2(
+                                position.x - state.mouse_point_prev.x,
+                                position.y - state.mouse_point_prev.y,
+                            );
+                            state.mouse_point_prev = vec2(position.x, position.y);
+                            state.mouse_point = position;
+                        }
+
+                        let mut status =
+                            self.current_tool.handle.on_mouse_moved(&self.canvas_state);
+                        if status == Status::Ignored {
+                            status = self.pan_tool.handle.on_mouse_moved(&self.canvas_state);
+                        }
+                        if status == Status::Ignored {
+                            status = self.zoom_tool.handle.on_mouse_moved(&self.canvas_state);
+                        }
+                    }
+                    widget::sphere_canvas::SphereCanvasMessage::MouseWheel { delta } => {
+                        if let Ok(mut state) = self.canvas_state.write() {
+                            state.mouse_wheel_delta = delta;
+                        }
+
+                        let mut status = self.current_tool.handle.on_wheel(&self.canvas_state);
+                        if status == Status::Ignored {
+                            status = self.pan_tool.handle.on_wheel(&self.canvas_state);
+                        }
+                        if status == Status::Ignored {
+                            status = self.zoom_tool.handle.on_wheel(&self.canvas_state);
+                        }
+                    }
+                    widget::sphere_canvas::SphereCanvasMessage::BoundsChanged(_bounds) => {
+                        if let Ok(mut write_state) = self.canvas_state.write() {
+                            write_state.viewport_bounds = _bounds;
+                        }
+                    }
+                }
+
                 Task::none()
             }
 
@@ -133,20 +219,24 @@ impl App {
             ),
             row![
                 column![
-                    self.tool_button(Tool::Move, &'\u{ec2e}'),
-                    self.tool_button(Tool::Object, &'\u{f265}'),
-                    self.tool_button(Tool::Node, &'\u{ebbc}'),
-                    self.tool_button(Tool::Select, &'\u{f7a0}'),
-                    self.tool_button(Tool::Pen, &'\u{eb04}'),
-                    self.tool_button(Tool::Brush, &'\u{ebb8}'),
-                    self.tool_button(Tool::Eraser, &'\u{eb8b}'),
-                    self.tool_button(Tool::Zoom, &'\u{fdaa}'),
-                ],
-                shader(sphere_canvas(
-                    self.image.clone(),
-                    Message::SphereCanvasAovChanged,
-                    Message::SphereCanvasLookAtChanged
-                ))
+                    self.tool_button(&self.pan_tool),
+                    self.tool_button(&self.zoom_tool),
+                ]
+                .height(Length::Fill),
+                shader((|| {
+                    sphere_canvas(
+                        self.image.clone(),
+                        self.canvas_state.clone(),
+                    ).on_event(|msg| {
+                        match msg {
+                            SphereCanvasMessage::MousePressed { button, position } => Message::SphereCanvasMessage(SphereCanvasMessage::MousePressed { button, position }),
+                            SphereCanvasMessage::MouseReleased { button, position } => Message::SphereCanvasMessage(SphereCanvasMessage::MouseReleased { button, position }),
+                            SphereCanvasMessage::MouseMoved { position } => Message::SphereCanvasMessage(SphereCanvasMessage::MouseMoved { position }),
+                            SphereCanvasMessage::MouseWheel { delta } => Message::SphereCanvasMessage(SphereCanvasMessage::MouseWheel { delta }),
+                            SphereCanvasMessage::BoundsChanged(bounds) => Message::SphereCanvasMessage(SphereCanvasMessage::BoundsChanged(bounds)),
+                        }
+                    })
+                })())
                 .width(Length::Fill)
                 .height(Length::Fill)
             ]
@@ -156,12 +246,19 @@ impl App {
                 container(text!("{}", self.image_path.as_path().to_str().unwrap()))
                     .width(Length::Fill),
                 container(row![
-                    text!(
-                        "N:{:.2}°, E:{:.2}°, FOV:{:.2}°",
-                        Self::rad2degree(self.look_at.x),
-                        Self::rad2degree(self.look_at.y),
-                        Self::rad2degree(self.aov),
-                    )
+                    (|| {
+                        if let Ok(state) = self.canvas_state.read() {
+                            let (x, y) = Self::look_at_to_latlng(state.look_at);
+                            text!(
+                                "N:{:.2}°, E:{:.2}°, FOV:{:.2}°",
+                                Self::rad2degree(x),
+                                Self::rad2degree(y),
+                                Self::rad2degree(state.aov),
+                            )
+                        } else {
+                            text!("N:--°, E:--°, FOV:--°")
+                        }
+                    })()
                     .font(font::mono_font()),
                     Space::with_width(10)
                 ])
@@ -194,7 +291,9 @@ impl App {
         }
     }
 
-    fn menu_bar_item(label: &'_ str) -> container::Container<'_, Message, iced::Theme, iced::Renderer> {
+    fn menu_bar_item(
+        label: &'_ str,
+    ) -> container::Container<'_, Message, iced::Theme, iced::Renderer> {
         container(text(label).align_x(Alignment::Start)).padding([4, 8])
     }
 
@@ -218,7 +317,10 @@ impl App {
         }
     }
 
-    fn tool_button_style(&self, tool: tool::Tool) -> impl Fn(&Theme, button::Status) -> button::Style + '_  {
+    fn tool_button_style(
+        &self,
+        tool: ToolHandle,
+    ) -> impl Fn(&Theme, button::Status) -> button::Style + '_ {
         move |_, status| {
             if status == button::Status::Pressed || self.current_tool == tool {
                 button::Style {
@@ -248,14 +350,27 @@ impl App {
         }
     }
 
-    fn tool_button(&self, tool: Tool, icon_codepoint: &'_ char) -> button::Button<'_, Message, iced::Theme, iced::Renderer> {
-        button(text(icon_codepoint).font(font::icon_font()).size(32))
-            .style(self.tool_button_style(tool))
-            .on_press(Message::ChangeTool(tool))
+    fn tool_button(
+        &self,
+        tool: &ToolHandle,
+    ) -> button::Button<'_, Message, iced::Theme, iced::Renderer> {
+        button(text(tool.handle.icon()).font(font::icon_font()).size(32))
+            .style(self.tool_button_style(tool.clone()))
+            .on_press(Message::ChangeTool(tool.clone()))
     }
 
     fn rad2degree(rad: f32) -> f32 {
         rad * (180.0 / PI)
+    }
+
+    // Convert a look_at vector to latitude and longitude in radians
+    fn look_at_to_latlng(look_at: Vec3) -> (f32, f32) {
+        let x = look_at.z.atan2(look_at.x);
+        let y = look_at
+            .y
+            .atan2((look_at.x.powi(2) + look_at.z.powi(2)).sqrt());
+
+        (x, y)
     }
 }
 

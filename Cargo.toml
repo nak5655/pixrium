@@ -10,3 +10,7 @@ iced_aw = { version = "0.12" }
 rfd = "0.15"
 bytemuck = "1.23"
 image = "0.25"
+
+[patch.crates-io]
+iced = { path = "../iced" }
+iced_aw = { path = "../iced_aw" }
