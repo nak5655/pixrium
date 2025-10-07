@@ -9,10 +9,9 @@ use iced::{Rectangle, mouse};
 use image::{EncodableLayout, GenericImageView};
 
 pub fn sphere_canvas<'a, Message>(
-    image: Arc<image::DynamicImage>,
     state: Arc<RwLock<SphereCanvasState>>,
 ) -> SphereCanvas<'a, Message> {
-    SphereCanvas::new(image, state)
+    SphereCanvas::new(state)
 }
 
 #[derive(Debug, Clone)]
@@ -35,15 +34,13 @@ pub enum SphereCanvasMessage {
 }
 
 pub struct SphereCanvas<'a, Message> {
-    image: Arc<image::DynamicImage>,
     state: Arc<RwLock<SphereCanvasState>>,
     on_event: Option<Box<dyn Fn(SphereCanvasMessage) -> Message + 'a>>,
 }
 
 impl<'a, Message> SphereCanvas<'a, Message> {
-    pub fn new(image: Arc<image::DynamicImage>, state: Arc<RwLock<SphereCanvasState>>) -> Self {
+    pub fn new(state: Arc<RwLock<SphereCanvasState>>) -> Self {
         SphereCanvas {
-            image: image,
             state: state,
             on_event: None,
         }
@@ -74,7 +71,7 @@ impl<'a, Message> shader::Program<Message> for SphereCanvas<'a, Message> {
                 right: state.right,
                 ..Default::default()
             },
-            self.image.clone(),
+            self.state.clone(), // TODO: draw blank if image is None.
         )
     }
 
@@ -147,6 +144,10 @@ impl<'a, Message> shader::Program<Message> for SphereCanvas<'a, Message> {
 
 #[derive(Debug, Clone)]
 pub struct SphereCanvasState {
+    pub image_bytes: Option<Arc<RwLock<Vec<u8>>>>,
+    pub image_width: u32,
+    pub image_height: u32,
+    pub modified_area: Option<Rectangle>,
     pub mouse_button: Option<Button>,
     pub mouse_point: Vec2,
     pub mouse_point_prev: Vec2,
@@ -159,9 +160,33 @@ pub struct SphereCanvasState {
     pub right: Vec3,
 }
 
+impl SphereCanvasState {
+    pub fn new(image: image::DynamicImage) -> Self {
+        let mut state = Self::default();
+        state.set_image(image);
+        state
+    }
+
+    pub fn set_image(&mut self, image: image::DynamicImage) {
+        self.image_bytes = Some(Arc::new(RwLock::new(image.to_rgba8().as_bytes().to_vec())));
+        self.image_width = image.width();
+        self.image_height = image.height();
+    }
+
+    pub fn get_uv_position(&self) -> Option<(f32, f32)> {
+        let x = (self.mouse_point.x - self.viewport_bounds.x) / self.viewport_bounds.width;
+        let y = (self.mouse_point.y - self.viewport_bounds.y) / self.viewport_bounds.height;
+        Some((x, y))
+    }
+}
+
 impl Default for SphereCanvasState {
     fn default() -> Self {
         Self {
+            image_bytes: None,
+            image_width: 0,
+            image_height: 0,
+            modified_area: None,
             mouse_button: None,
             mouse_point: vec2(0., 0.),
             mouse_point_prev: vec2(0., 0.),
@@ -180,7 +205,9 @@ pub struct SphereCanvasPipeline {
     pipeline: wgpu::RenderPipeline,
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
-    image: Arc<image::DynamicImage>,
+    image_bytes: Arc<RwLock<Vec<u8>>>,
+    image_width: u32,
+    image_height: u32,
     texture: wgpu::Texture,
     texture_view: wgpu::TextureView,
     sampler: wgpu::Sampler,
@@ -190,7 +217,9 @@ impl SphereCanvasPipeline {
     pub fn new(
         device: &wgpu::Device,
         format: wgpu::TextureFormat,
-        image: Arc<image::DynamicImage>,
+        image_bytes: Arc<RwLock<Vec<u8>>>,
+        image_width: u32,
+        image_height: u32,
     ) -> Self {
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("Sphere Sampler"),
@@ -206,8 +235,8 @@ impl SphereCanvasPipeline {
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("Sphere Texture"),
             size: wgpu::Extent3d {
-                width: image.width(),
-                height: image.height(),
+                width: image_width,
+                height: image_height,
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,
@@ -317,7 +346,9 @@ impl SphereCanvasPipeline {
             pipeline,
             uniform_buffer,
             uniform_bind_group,
-            image,
+            image_bytes,
+            image_width,
+            image_height,
             texture,
             texture_view,
             sampler,
@@ -390,18 +421,18 @@ impl Default for SphereCanvasUniforms {
 #[derive(Debug)]
 pub struct SphereCanvasPrimitive {
     uniforms: SphereCanvasUniforms,
-    image: Arc<image::DynamicImage>,
+    canvas_state: Arc<RwLock<SphereCanvasState>>,
 }
 
 impl SphereCanvasPrimitive {
     pub fn new(
         bounds: Rectangle,
         unifroms: SphereCanvasUniforms,
-        image: Arc<image::DynamicImage>,
+        canvas_state: Arc<RwLock<SphereCanvasState>>,
     ) -> Self {
         Self {
             uniforms: unifroms,
-            image: image,
+            canvas_state: canvas_state,
         }
     }
 }
@@ -416,42 +447,70 @@ impl shader::Primitive for SphereCanvasPrimitive {
         _bounds: &Rectangle,
         viewport: &shader::Viewport,
     ) {
-        let mut is_texture_invalidated = false;
+        if let Ok(mut state) = self.canvas_state.write() {
+            if let Some(ptr_image) = state.image_bytes.clone() {
+                if let Ok(image) = ptr_image.read() {
+                    if storage.has::<SphereCanvasPipeline>() {
+                        let pipeline = storage.get_mut::<SphereCanvasPipeline>().unwrap();
+                        if Arc::ptr_eq(&pipeline.image_bytes, &ptr_image) == false {
+                            let new_pipeline = SphereCanvasPipeline::new(
+                                device,
+                                format,
+                                ptr_image.clone(),
+                                state.image_width,
+                                state.image_height,
+                            );
+                            state.modified_area = Some(Rectangle {
+                                x: 0.,
+                                y: 0.,
+                                width: state.image_width as f32,
+                                height: state.image_height as f32,
+                            });
+                            storage.store(new_pipeline)
+                        }
+                    } else {
+                        let pipeline = SphereCanvasPipeline::new(
+                            device,
+                            format,
+                            ptr_image.clone(),
+                            state.image_width,
+                            state.image_height,
+                        );
+                        state.modified_area = Some(Rectangle {
+                            x: 0.,
+                            y: 0.,
+                            width: state.image_width as f32,
+                            height: state.image_height as f32,
+                        });
+                        storage.store(pipeline);
+                    }
 
-        if storage.has::<SphereCanvasPipeline>() {
-            let pipeline = storage.get_mut::<SphereCanvasPipeline>().unwrap();
-            if pipeline.image != self.image {
-                let new_pipeline = SphereCanvasPipeline::new(device, format, self.image.clone());
-                is_texture_invalidated = true;
-                storage.store(new_pipeline)
+                    let pipeline = storage.get_mut::<SphereCanvasPipeline>().unwrap();
+
+                    if let Some(modified_area) = state.modified_area {
+                        let bytes = state.image_bytes.as_ref().unwrap().clone();
+                        queue.write_texture(
+                            wgpu::ImageCopyTexture {
+                                texture: &pipeline.texture,
+                                mip_level: 0,
+                                origin: wgpu::Origin3d::ZERO,
+                                aspect: wgpu::TextureAspect::All,
+                            },
+                            bytes.read().unwrap().as_ref(),
+                            wgpu::ImageDataLayout {
+                                offset: 0,
+                                bytes_per_row: Some(4 * state.image_width),
+                                rows_per_image: Some(state.image_height),
+                            },
+                            pipeline.texture.size(),
+                        );
+                        state.modified_area = None;
+                    }
+
+                    pipeline.update(queue, &self.uniforms);
+                }
             }
-        } else {
-            let pipeline = SphereCanvasPipeline::new(device, format, self.image.clone());
-            is_texture_invalidated = true;
-            storage.store(pipeline);
         }
-
-        let pipeline = storage.get_mut::<SphereCanvasPipeline>().unwrap();
-
-        if is_texture_invalidated {
-            queue.write_texture(
-                wgpu::ImageCopyTexture {
-                    texture: &pipeline.texture,
-                    mip_level: 0,
-                    origin: wgpu::Origin3d::ZERO,
-                    aspect: wgpu::TextureAspect::All,
-                },
-                pipeline.image.to_rgba8().as_bytes(),
-                wgpu::ImageDataLayout {
-                    offset: 0,
-                    bytes_per_row: Some(4 * self.image.dimensions().0),
-                    rows_per_image: Some(self.image.dimensions().1),
-                },
-                pipeline.texture.size(),
-            );
-        }
-
-        pipeline.update(queue, &self.uniforms);
     }
 
     fn render(

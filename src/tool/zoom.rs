@@ -1,15 +1,6 @@
 use std::sync::Arc;
 
-use core::fmt;
-use glam::{Quat, Vec2, Vec3, vec2, vec3};
-use iced::advanced::Shell;
-use iced::advanced::graphics::core::event;
 use iced::advanced::graphics::core::event::Status;
-use iced::advanced::mouse::Cursor;
-use iced::mouse::{Button, ScrollDelta};
-use iced::widget::shader;
-use iced::widget::shader::wgpu;
-use iced::{Rectangle, mouse};
 
 use crate::tool::Tool;
 use crate::widget::sphere_canvas::SphereCanvasState;
@@ -27,11 +18,6 @@ impl ZoomTool {
             icon: '\u{fdaa}',
         }
     }
-}
-
-#[derive(Debug, Clone)]
-pub enum ZoomMessage {
-    AovChanged(f32),
 }
 
 impl Tool for ZoomTool {

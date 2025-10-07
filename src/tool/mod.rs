@@ -1,41 +1,31 @@
 use core::fmt;
-use glam::Vec2;
-use glam::vec2;
-use iced::advanced::Shell;
 use iced::advanced::graphics::core::event::Status;
-use iced::advanced::mouse::Cursor;
-use iced::widget::canvas;
-use iced::widget::shader;
-use iced::{Rectangle, mouse};
-use std::any::Any;
 use std::sync::Arc;
-use std::sync::Mutex;
 use std::sync::RwLock;
 
 use crate::widget::sphere_canvas::SphereCanvasState;
 
 pub mod pan;
+pub mod pen;
 pub mod zoom;
-
-pub trait ToolMessage: Any + Clone {}
 
 pub trait Tool {
     fn name(&self) -> &str;
     fn icon(&self) -> char;
 
-    fn on_mouse_pressed(&self, canvas_state: &Arc<RwLock<SphereCanvasState>>) -> Status {
+    fn on_mouse_pressed(&self, _canvas_state: &Arc<RwLock<SphereCanvasState>>) -> Status {
         Status::Ignored
     }
 
-    fn on_mouse_released(&self, canvas_state: &Arc<RwLock<SphereCanvasState>>) -> Status {
+    fn on_mouse_released(&self, _canvas_state: &Arc<RwLock<SphereCanvasState>>) -> Status {
         Status::Ignored
     }
 
-    fn on_mouse_moved(&self, canvas_state: &Arc<RwLock<SphereCanvasState>>) -> Status {
+    fn on_mouse_moved(&self, _canvas_state: &Arc<RwLock<SphereCanvasState>>) -> Status {
         Status::Ignored
     }
 
-    fn on_wheel(&self, canvas_state: &Arc<RwLock<SphereCanvasState>>) -> Status {
+    fn on_wheel(&self, _canvas_state: &Arc<RwLock<SphereCanvasState>>) -> Status {
         Status::Ignored
     }
 }

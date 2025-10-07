@@ -3,7 +3,6 @@ mod tool;
 mod widget;
 
 use glam::{Vec3, vec2};
-use iced::Length::Fill;
 use iced::border::Radius;
 use iced::event::Status;
 use iced::widget::{Space, button, center, column, container, row, shader, text};
@@ -16,12 +15,10 @@ use image::{self, ImageReader};
 use rfd;
 use std::f32::consts::PI;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex, RwLock};
-use tool::Tool;
+use std::sync::{Arc, RwLock};
 use widget::sphere_canvas::sphere_canvas;
 
 use crate::tool::ToolHandle;
-use crate::tool::pan::PanMessage;
 use crate::widget::sphere_canvas::{SphereCanvasMessage, SphereCanvasState};
 
 #[cfg(windows)]
@@ -57,32 +54,34 @@ enum Error {
 
 struct App {
     image_path: PathBuf,
-    image: Arc<image::DynamicImage>,
 
     canvas_state: Arc<RwLock<SphereCanvasState>>,
 
     current_tool: ToolHandle,
     pan_tool: ToolHandle,
     zoom_tool: ToolHandle,
+    pen_tool: ToolHandle,
 }
 
 impl App {
     fn new() -> Self {
         let img = image::load_from_memory(SAMPLE_IMAGE_BYTES).unwrap();
 
-        let pan_tool = tool::ToolHandle {
-            handle: Arc::new(tool::pan::PanTool::new()),
+        let pen_tool = tool::ToolHandle {
+            handle: Arc::new(tool::pen::PenTool::new()),
         };
 
         Self {
             image_path: PathBuf::new(),
-            image: Arc::new(img),
-            canvas_state: Arc::new(RwLock::new(SphereCanvasState::default())),
-            current_tool: pan_tool.clone(),
-            pan_tool: pan_tool.clone(),
+            canvas_state: Arc::new(RwLock::new(SphereCanvasState::new(img))),
+            current_tool: pen_tool.clone(),
+            pan_tool: tool::ToolHandle {
+                handle: Arc::new(tool::pan::PanTool::new()),
+            },
             zoom_tool: tool::ToolHandle {
                 handle: Arc::new(tool::zoom::ZoomTool::new()),
             },
+            pen_tool: pen_tool.clone(),
         }
     }
 
@@ -96,7 +95,9 @@ impl App {
                     .decode()
                     .expect("Failed to decode image.");
                 self.image_path = image_path;
-                self.image = Arc::new(dyn_image);
+                if let Ok(mut canvas_state) = self.canvas_state.try_write() {
+                    canvas_state.set_image(dyn_image);
+                }
 
                 Task::none()
             }
@@ -219,13 +220,11 @@ impl App {
             ),
             row![
                 column![
-                    self.tool_button(&self.pan_tool),
-                    self.tool_button(&self.zoom_tool),
+                    self.tool_button(&self.pen_tool),
                 ]
                 .height(Length::Fill),
                 shader((|| {
                     sphere_canvas(
-                        self.image.clone(),
                         self.canvas_state.clone(),
                     ).on_event(|msg| {
                         match msg {

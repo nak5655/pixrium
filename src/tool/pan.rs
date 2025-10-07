@@ -1,11 +1,8 @@
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 
-use glam::{Quat, Vec2, vec2};
-use iced::advanced::Shell;
+use glam::Quat;
 use iced::advanced::graphics::core::event::Status;
-use iced::advanced::mouse::Cursor;
-use iced::widget::shader;
-use iced::{Rectangle, mouse};
+use iced::mouse;
 
 use crate::tool::Tool;
 use crate::widget::sphere_canvas::SphereCanvasState;
@@ -23,11 +20,6 @@ impl PanTool {
             icon: '\u{ec2e}',
         }
     }
-}
-
-#[derive(Debug, Clone)]
-pub enum PanMessage {
-    LookAtChanged(Vec2),
 }
 
 impl Tool for PanTool {
