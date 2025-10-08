@@ -174,9 +174,28 @@ impl SphereCanvasState {
     }
 
     pub fn get_uv_position(&self) -> Option<(f32, f32)> {
-        let x = (self.mouse_point.x - self.viewport_bounds.x) / self.viewport_bounds.width;
-        let y = (self.mouse_point.y - self.viewport_bounds.y) / self.viewport_bounds.height;
-        Some((x, y))
+        // Convert mouse position to normalized screen UV
+        let uv_x = (self.mouse_point.x - self.viewport_bounds.x) / self.viewport_bounds.width;
+        let uv_y =
+            1.0 - (self.mouse_point.y - self.viewport_bounds.y) / self.viewport_bounds.height;
+
+        // Calculate yaw and pitch
+        let yaw = self.aov * (uv_x - 0.5);
+        let pitch = self.aov * (uv_y - 0.5);
+
+        // Calculate sphere coordinates
+        let sphere_coord = (self.look_at + yaw * self.right + pitch * self.up).normalize();
+
+        // Calculate spherical coordinates
+        let x = sphere_coord.z.atan2(sphere_coord.x);
+        let y = sphere_coord
+            .y
+            .atan2((sphere_coord.x.powi(2) + sphere_coord.z.powi(2)).sqrt());
+
+        // Convert to texture UV
+        let tex_u = x / (2.0 * std::f32::consts::PI) + 0.5;
+        let tex_v = 0.5 - y / std::f32::consts::PI;
+        Some((tex_u, tex_v))
     }
 }
 
@@ -380,7 +399,14 @@ impl SphereCanvasPipeline {
             occlusion_query_set: None,
         });
 
-        pass.set_scissor_rect(viewport.x, viewport.y, viewport.width, viewport.height);
+        pass.set_viewport(
+            viewport.x as f32,
+            viewport.y as f32,
+            viewport.width as f32,
+            viewport.height as f32,
+            0.0,
+            1.0,
+        );
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &self.uniform_bind_group, &[]);
         pass.draw(0..3, 0..1);
