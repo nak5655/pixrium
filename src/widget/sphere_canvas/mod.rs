@@ -6,7 +6,7 @@ use iced::mouse::Button;
 use iced::widget::shader;
 use iced::widget::shader::wgpu;
 use iced::{Rectangle, mouse};
-use image::{EncodableLayout, GenericImageView};
+use image::{EncodableLayout, RgbaImage};
 
 pub fn sphere_canvas<'a, Message>(
     state: Arc<RwLock<SphereCanvasState>>,
@@ -144,7 +144,7 @@ impl<'a, Message> shader::Program<Message> for SphereCanvas<'a, Message> {
 
 #[derive(Debug, Clone)]
 pub struct SphereCanvasState {
-    pub image_bytes: Option<Arc<RwLock<Vec<u8>>>>,
+    pub image: Option<Arc<RwLock<RgbaImage>>>,
     pub image_width: u32,
     pub image_height: u32,
     pub modified_area: Option<Rectangle>,
@@ -168,41 +168,22 @@ impl SphereCanvasState {
     }
 
     pub fn set_image(&mut self, image: image::DynamicImage) {
-        self.image_bytes = Some(Arc::new(RwLock::new(image.to_rgba8().as_bytes().to_vec())));
+        self.image = Some(Arc::new(RwLock::new(image.to_rgba8())));
         self.image_width = image.width();
         self.image_height = image.height();
     }
 
-    pub fn get_uv_position(&self) -> Option<(f32, f32)> {
-        // Convert mouse position to normalized screen UV
-        let uv_x = (self.mouse_point.x - self.viewport_bounds.x) / self.viewport_bounds.width;
-        let uv_y =
-            1.0 - (self.mouse_point.y - self.viewport_bounds.y) / self.viewport_bounds.height;
-
-        // Calculate yaw and pitch
-        let yaw = self.aov * (uv_x - 0.5);
-        let pitch = self.aov * (uv_y - 0.5);
-
-        // Calculate sphere coordinates
-        let sphere_coord = (self.look_at + yaw * self.right + pitch * self.up).normalize();
-
-        // Calculate spherical coordinates
-        let x = sphere_coord.z.atan2(sphere_coord.x);
-        let y = sphere_coord
-            .y
-            .atan2((sphere_coord.x.powi(2) + sphere_coord.z.powi(2)).sqrt());
-
-        // Convert to texture UV
-        let tex_u = x / (2.0 * std::f32::consts::PI) + 0.5;
-        let tex_v = 0.5 - y / std::f32::consts::PI;
-        Some((tex_u, tex_v))
+    pub fn get_mouse_coord_in_view(&self) -> Vec2 {
+        let x = (self.mouse_point.x - self.viewport_bounds.x) / self.viewport_bounds.width;
+        let y = (self.mouse_point.y - self.viewport_bounds.y) / self.viewport_bounds.height;
+        vec2(x, y)
     }
 }
 
 impl Default for SphereCanvasState {
     fn default() -> Self {
         Self {
-            image_bytes: None,
+            image: None,
             image_width: 0,
             image_height: 0,
             modified_area: None,
@@ -224,7 +205,7 @@ pub struct SphereCanvasPipeline {
     pipeline: wgpu::RenderPipeline,
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
-    image_bytes: Arc<RwLock<Vec<u8>>>,
+    image: Arc<RwLock<RgbaImage>>,
     image_width: u32,
     image_height: u32,
     texture: wgpu::Texture,
@@ -236,7 +217,7 @@ impl SphereCanvasPipeline {
     pub fn new(
         device: &wgpu::Device,
         format: wgpu::TextureFormat,
-        image_bytes: Arc<RwLock<Vec<u8>>>,
+        image: Arc<RwLock<RgbaImage>>,
         image_width: u32,
         image_height: u32,
     ) -> Self {
@@ -365,7 +346,7 @@ impl SphereCanvasPipeline {
             pipeline,
             uniform_buffer,
             uniform_bind_group,
-            image_bytes,
+            image,
             image_width,
             image_height,
             texture,
@@ -474,11 +455,11 @@ impl shader::Primitive for SphereCanvasPrimitive {
         viewport: &shader::Viewport,
     ) {
         if let Ok(mut state) = self.canvas_state.write() {
-            if let Some(ptr_image) = state.image_bytes.clone() {
+            if let Some(ptr_image) = state.image.clone() {
                 if let Ok(image) = ptr_image.read() {
                     if storage.has::<SphereCanvasPipeline>() {
                         let pipeline = storage.get_mut::<SphereCanvasPipeline>().unwrap();
-                        if Arc::ptr_eq(&pipeline.image_bytes, &ptr_image) == false {
+                        if Arc::ptr_eq(&pipeline.image, &ptr_image) == false {
                             let new_pipeline = SphereCanvasPipeline::new(
                                 device,
                                 format,
@@ -513,8 +494,9 @@ impl shader::Primitive for SphereCanvasPrimitive {
 
                     let pipeline = storage.get_mut::<SphereCanvasPipeline>().unwrap();
 
+                    // TODO: Update only the modified area.
                     if let Some(modified_area) = state.modified_area {
-                        let bytes = state.image_bytes.as_ref().unwrap().clone();
+                        let buffer = state.image.as_ref().unwrap().clone();
                         queue.write_texture(
                             wgpu::ImageCopyTexture {
                                 texture: &pipeline.texture,
@@ -522,7 +504,7 @@ impl shader::Primitive for SphereCanvasPrimitive {
                                 origin: wgpu::Origin3d::ZERO,
                                 aspect: wgpu::TextureAspect::All,
                             },
-                            bytes.read().unwrap().as_ref(),
+                            buffer.read().unwrap().as_bytes(),
                             wgpu::ImageDataLayout {
                                 offset: 0,
                                 bytes_per_row: Some(4 * state.image_width),

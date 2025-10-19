@@ -1,4 +1,5 @@
 mod font;
+mod math;
 mod tool;
 mod widget;
 

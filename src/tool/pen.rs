@@ -1,10 +1,11 @@
+use std::collections::{HashSet, VecDeque};
 use std::sync::{Arc, RwLock};
 
-use glam::{Quat, Vec2};
 use iced::advanced::graphics::core::event::Status;
 use iced::mouse;
-use image::{GenericImage, GenericImageView};
+use image::Rgba;
 
+use crate::math::projection::SphereProjection;
 use crate::tool::Tool;
 use crate::widget::sphere_canvas::SphereCanvasState;
 
@@ -12,6 +13,9 @@ use crate::widget::sphere_canvas::SphereCanvasState;
 pub struct PenTool {
     pub name: String,
     pub icon: char,
+
+    pub width: f32,
+    pub color: Rgba<u8>,
 }
 
 impl PenTool {
@@ -19,6 +23,9 @@ impl PenTool {
         Self {
             name: "Pen".to_string(),
             icon: '\u{eb04}',
+
+            width: 10.0,
+            color: Rgba([255, 255, 255, 255]),
         }
     }
 }
@@ -33,53 +40,100 @@ impl Tool for PenTool {
 
     fn on_mouse_moved(&self, canvas_state: &Arc<RwLock<SphereCanvasState>>) -> Status {
         // Get the UV position before acquiring mutable borrow
-        let uv_position = {
-            if let Ok(canvas_state) = canvas_state.try_read() {
-                canvas_state.get_uv_position()
-            } else {
-                None
-            }
+        let cp;
+
+        if let Ok(canvas_state) = canvas_state.try_read() {
+            cp = canvas_state.get_mouse_coord_in_view();
+        } else {
+            return Status::Ignored;
         };
 
         if let Ok(mut canvas_state) = canvas_state.try_write() {
             if canvas_state.mouse_button == Some(mouse::Button::Left) {
-                if let Some(rw_image) = canvas_state.image_bytes.clone() {
+                if let Some(rw_image) = canvas_state.image.clone() {
                     if let Ok(mut image) = rw_image.write() {
-                        if let Some((x, y)) = uv_position {
-                            let img_width = canvas_state.image_width;
-                            let img_height = canvas_state.image_height;
-                            let px = (x * img_width as f32) as u32;
-                            let py = (y * img_height as f32) as u32;
+                        let tex_w = canvas_state.image_width as i32;
+                        let tex_h = canvas_state.image_height as i32;
 
-                            let radius = 5; // ペンの半径
-                            for dy in -(radius as i32)..=(radius as i32) {
-                                for dx in -(radius as i32)..=(radius as i32) {
-                                    if dx * dx + dy * dy <= radius * radius {
-                                        let nx = px as i32 + dx;
-                                        let ny = py as i32 + dy;
-                                        if nx >= 0
-                                            && nx < img_width as i32
-                                            && ny >= 0
-                                            && ny < img_height as i32
-                                        {
-                                            // 白色で塗りつぶす
-                                            let idx = (ny * 4 * img_width as i32 + nx * 4) as usize;
-                                            image[idx] = 255;
-                                            image[idx + 1] = 255;
-                                            image[idx + 2] = 255;
-                                            image[idx + 3] = 255;
+                        // view座標(0.0~1.0)からテクスチャ座標(-1.0~1.0)への射影関数
+                        let proj = SphereProjection::new(
+                            canvas_state.aov,
+                            canvas_state.look_at,
+                            canvas_state.up,
+                            canvas_state.right,
+                        );
+
+                        // テクスチャのピクセルでの中心座標
+                        let tex_cp = proj.proj(cp.x, cp.y);
+                        let tex_cx = (tex_cp.x * tex_w as f32).round() as i32;
+                        let tex_cy = (tex_cp.y * tex_h as f32).round() as i32;
+
+                        // 塗りつぶし予定のピクセル
+                        let mut rest = VecDeque::new();
+                        rest.push_back((tex_cx, tex_cy));
+
+                        // 走査済みのピクセル
+                        let mut visited = HashSet::new();
+                        let mut min_x = tex_w;
+                        let mut max_x = 0;
+                        let mut min_y = tex_h;
+                        let mut max_y = 0;
+
+                        // ピクセルの走査
+                        while rest.len() > 0 {
+                            let (px, py) = rest.pop_front().unwrap();
+
+                            //let u = px as f32 / tex_w as f32;
+                            //let v = py as f32 / tex_h as f32;
+                            //let vp = proj.unproj(u, v);
+
+                            //let dx = vp.x - cp.x;
+                            //let dy = vp.y - cp.y;
+                            let dx = px - tex_cx;
+                            let dy = py - tex_cy;
+                            let distance = dx * dx + dy * dy;
+
+                            //let radius = self.width / (tex_w as f32) / 2.0;
+
+                            min_x = min_x.min(px);
+                            max_x = max_x.max(px);
+                            min_y = min_y.min(py);
+                            max_y = max_y.max(py);
+
+                            if distance <= 10 {
+                                // 白色で塗りつぶす
+                                if px >= 0 && px < tex_w as i32 && py >= 0 && py < tex_h as i32 {
+                                    image.put_pixel(px as u32, py as u32, self.color);
+                                }
+
+                                // 隣接ピクセルを追加
+                                for (nx, ny) in
+                                    [(px + 1, py), (px - 1, py), (px, py + 1), (px, py - 1)]
+                                {
+                                    if nx >= 0 && nx < tex_w as i32 && ny >= 0 && ny < tex_h as i32
+                                    {
+                                        if visited.contains(&(nx, ny)) {
+                                            continue;
                                         }
+                                        rest.push_back((nx, ny));
+                                        visited.insert((nx, ny));
                                     }
                                 }
                             }
 
-                            canvas_state.modified_area = Some(iced::Rectangle {
-                                x: (px.saturating_sub(radius as u32)) as f32,
-                                y: (py.saturating_sub(radius as u32)) as f32,
-                                width: (radius * 2) as f32,
-                                height: (radius * 2) as f32,
-                            });
+                            println!("{cp}, {tex_cp} {distance}, {px}, {py}")
                         }
+
+                        // テクスチャの更新範囲
+                        // TODO: 現状無視して全範囲更新する
+                        canvas_state.modified_area = Some(iced::Rectangle {
+                            x: min_x as f32 as f32,
+                            y: min_y as f32 / tex_h as f32,
+                            width: (max_x - min_x + 1) as f32 / tex_w as f32,
+                            height: (max_y - min_y + 1) as f32 / tex_h as f32,
+                        });
+
+                        println!("${min_x}, ${min_y}, ${max_x}, ${max_y}");
                     }
                     return Status::Captured;
                 }
