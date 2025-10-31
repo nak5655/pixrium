@@ -1,4 +1,5 @@
 use std::collections::{HashSet, VecDeque};
+use std::f32::consts::PI;
 use std::sync::{Arc, RwLock};
 
 use iced::advanced::graphics::core::event::Status;
@@ -24,7 +25,7 @@ impl PenTool {
             name: "Pen".to_string(),
             icon: '\u{eb04}',
 
-            width: 10.0,
+            width: 3.0,
             color: Rgba([255, 255, 255, 255]),
         }
     }
@@ -40,10 +41,13 @@ impl Tool for PenTool {
 
     fn on_mouse_moved(&self, canvas_state: &Arc<RwLock<SphereCanvasState>>) -> Status {
         // Get the UV position before acquiring mutable borrow
-        let cp;
+        let mut cp;
+        // viewに収まる最小ピクセル数
+        let pixel_scale;
 
         if let Ok(canvas_state) = canvas_state.try_read() {
             cp = canvas_state.get_mouse_coord_in_view();
+            pixel_scale = canvas_state.aov / 2.0 / PI * canvas_state.image_width as f32;
         } else {
             return Status::Ignored;
         };
@@ -67,6 +71,9 @@ impl Tool for PenTool {
                         let tex_cp = proj.proj(cp.x, cp.y);
                         let tex_cx = (tex_cp.x * tex_w as f32).round() as i32;
                         let tex_cy = (tex_cp.y * tex_h as f32).round() as i32;
+                        // 距離計測の基準点を再計算（計算誤差を考慮）
+                        cp =
+                            proj.unproj(tex_cx as f32 / tex_w as f32, tex_cy as f32 / tex_h as f32);
 
                         // 塗りつぶし予定のピクセル
                         let mut rest = VecDeque::new();
@@ -83,24 +90,23 @@ impl Tool for PenTool {
                         while rest.len() > 0 {
                             let (px, py) = rest.pop_front().unwrap();
 
-                            //let u = px as f32 / tex_w as f32;
-                            //let v = py as f32 / tex_h as f32;
-                            //let vp = proj.unproj(u, v);
+                            // viewでの距離を求める
+                            let u = px as f32 / tex_w as f32;
+                            let v = py as f32 / tex_h as f32;
+                            let vp = proj.unproj(u, v);
 
-                            //let dx = vp.x - cp.x;
-                            //let dy = vp.y - cp.y;
-                            let dx = px - tex_cx;
-                            let dy = py - tex_cy;
-                            let distance = dx * dx + dy * dy;
+                            let dx = vp.x - cp.x;
+                            let dy = vp.y - cp.y;
+                            let distance2 = dx * dx + dy * dy;
 
-                            //let radius = self.width / (tex_w as f32) / 2.0;
+                            let radius = self.width / pixel_scale;
 
                             min_x = min_x.min(px);
                             max_x = max_x.max(px);
                             min_y = min_y.min(py);
                             max_y = max_y.max(py);
 
-                            if distance <= 10 {
+                            if distance2 <= radius * radius {
                                 // 白色で塗りつぶす
                                 if px >= 0 && px < tex_w as i32 && py >= 0 && py < tex_h as i32 {
                                     image.put_pixel(px as u32, py as u32, self.color);
@@ -120,8 +126,6 @@ impl Tool for PenTool {
                                     }
                                 }
                             }
-
-                            println!("{cp}, {tex_cp} {distance}, {px}, {py}")
                         }
 
                         // テクスチャの更新範囲
@@ -132,8 +136,6 @@ impl Tool for PenTool {
                             width: (max_x - min_x + 1) as f32 / tex_w as f32,
                             height: (max_y - min_y + 1) as f32 / tex_h as f32,
                         });
-
-                        println!("${min_x}, ${min_y}, ${max_x}, ${max_y}");
                     }
                     return Status::Captured;
                 }

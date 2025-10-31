@@ -176,7 +176,7 @@ impl SphereCanvasState {
     pub fn get_mouse_coord_in_view(&self) -> Vec2 {
         let x = (self.mouse_point.x - self.viewport_bounds.x) / self.viewport_bounds.width;
         let y = (self.mouse_point.y - self.viewport_bounds.y) / self.viewport_bounds.height;
-        vec2(x, y)
+        vec2(x, 1.0 - y)
     }
 }
 
