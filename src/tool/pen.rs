@@ -41,12 +41,12 @@ impl Tool for PenTool {
 
     fn on_mouse_moved(&self, canvas_state: &Arc<RwLock<SphereCanvasState>>) -> Status {
         // Get the UV position before acquiring mutable borrow
-        let mut cp;
+        let mp;
         // viewに収まる最小ピクセル数
         let pixel_scale;
 
         if let Ok(canvas_state) = canvas_state.try_read() {
-            cp = canvas_state.get_mouse_coord_in_view();
+            mp = canvas_state.get_mouse_coord_in_view();
             pixel_scale = canvas_state.aov / 2.0 / PI * canvas_state.image_width as f32;
         } else {
             return Status::Ignored;
@@ -68,12 +68,11 @@ impl Tool for PenTool {
                         );
 
                         // テクスチャのピクセルでの中心座標
-                        let tex_cp = proj.proj(cp.x, cp.y);
+                        let tex_cp = proj.proj(mp.x, mp.y);
                         let tex_cx = (tex_cp.x * tex_w as f32).round() as i32;
                         let tex_cy = (tex_cp.y * tex_h as f32).round() as i32;
                         // 距離計測の基準点を再計算（計算誤差を考慮）
-                        cp =
-                            proj.unproj(tex_cx as f32 / tex_w as f32, tex_cy as f32 / tex_h as f32);
+                        let cp = proj.unproj(tex_cp.x, tex_cp.y);
 
                         // 塗りつぶし予定のピクセル
                         let mut rest = VecDeque::new();
