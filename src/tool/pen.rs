@@ -16,17 +16,17 @@ pub struct PenTool {
     pub icon: char,
 
     pub width: f32,
-    pub color: Rgba<u8>,
+    pub color: Arc<RwLock<Rgba<u8>>>,
 }
 
 impl PenTool {
-    pub fn new() -> Self {
+    pub fn new(color: Arc<RwLock<Rgba<u8>>>) -> Self {
         Self {
             name: "Pen".to_string(),
             icon: '\u{eb04}',
 
             width: 3.0,
-            color: Rgba([255, 255, 255, 255]),
+            color,
         }
     }
 }
@@ -44,6 +44,8 @@ impl Tool for PenTool {
         let mp;
         // viewに収まる最小ピクセル数
         let pixel_scale;
+
+        let color = self.color.read().unwrap();
 
         if let Ok(canvas_state) = canvas_state.try_read() {
             mp = canvas_state.get_mouse_coord_in_view();
@@ -108,7 +110,7 @@ impl Tool for PenTool {
                             if distance2 <= radius * radius {
                                 // 白色で塗りつぶす
                                 if px >= 0 && px < tex_w as i32 && py >= 0 && py < tex_h as i32 {
-                                    image.put_pixel(px as u32, py as u32, self.color);
+                                    image.put_pixel(px as u32, py as u32, *color);
                                 }
 
                                 // 隣接ピクセルを追加

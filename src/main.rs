@@ -1,8 +1,10 @@
+mod component;
 mod font;
 mod math;
 mod tool;
 mod widget;
 
+use component::dock::color_dock::ColorDock;
 use glam::{Vec3, vec2};
 use iced::border::Radius;
 use iced::event::Status;
@@ -12,7 +14,7 @@ use iced::{Element, Task};
 use iced_aw::menu::{Item, Menu};
 use iced_aw::{menu_bar, menu_items};
 use iced_aw::{quad, widgets::InnerBounds};
-use image::{self, ImageReader};
+use image::{self, ImageReader, Rgba};
 use rfd;
 use std::f32::consts::PI;
 use std::path::PathBuf;
@@ -44,6 +46,7 @@ enum Message {
     SphereCanvasMessage(widget::sphere_canvas::SphereCanvasMessage),
 
     ChangeTool(ToolHandle),
+    ChangeColor(Rgba<u8>),
 
     Exit,
 }
@@ -58,23 +61,31 @@ struct App {
 
     canvas_state: Arc<RwLock<SphereCanvasState>>,
 
+    color: Arc<RwLock<image::Rgba<u8>>>,
     current_tool: ToolHandle,
     pan_tool: ToolHandle,
     zoom_tool: ToolHandle,
     pen_tool: ToolHandle,
+
+    color_dock: ColorDock<'static, Message>,
 }
 
 impl App {
     fn new() -> Self {
         let img = image::load_from_memory(SAMPLE_IMAGE_BYTES).unwrap();
 
+        let color = Arc::new(RwLock::new(Rgba([255, 255, 255, 255])));
+
         let pen_tool = tool::ToolHandle {
-            handle: Arc::new(tool::pen::PenTool::new()),
+            handle: Arc::new(tool::pen::PenTool::new(color.clone())),
         };
 
         Self {
             image_path: PathBuf::new(),
             canvas_state: Arc::new(RwLock::new(SphereCanvasState::new(img))),
+
+            color,
+
             current_tool: pen_tool.clone(),
             pan_tool: tool::ToolHandle {
                 handle: Arc::new(tool::pan::PanTool::new()),
@@ -83,6 +94,8 @@ impl App {
                 handle: Arc::new(tool::zoom::ZoomTool::new()),
             },
             pen_tool: pen_tool.clone(),
+
+            color_dock: ColorDock::new(Message::ChangeColor),
         }
     }
 
@@ -191,6 +204,12 @@ impl App {
                 self.current_tool = tool;
                 Task::none()
             }
+
+            Message::ChangeColor(color) => {
+                let mut self_color = self.color.write().unwrap();
+                *self_color = color;
+                Task::none()
+            }
         }
     }
 
@@ -238,7 +257,12 @@ impl App {
                     })
                 })())
                 .width(Length::Fill)
-                .height(Length::Fill)
+                .height(Length::Fill),
+                column![
+                    self.color_dock.view(self.color.read().unwrap().clone()),
+                ]
+                .width(Length::Fixed(200.0))
+                .height(Length::Fill),
             ]
             .width(Length::Fill)
             .height(Length::Fill),
