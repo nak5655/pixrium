@@ -108,7 +108,7 @@ impl Tool for PenTool {
                             max_y = max_y.max(py);
 
                             if distance2 <= radius * radius {
-                                // 白色で塗りつぶす
+                                // 塗りつぶす
                                 if px >= 0 && px < tex_w as i32 && py >= 0 && py < tex_h as i32 {
                                     image.put_pixel(px as u32, py as u32, *color);
                                 }
