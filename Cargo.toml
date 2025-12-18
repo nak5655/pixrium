@@ -7,3 +7,4 @@ edition = "2024"
 freya = "0.3"
 dioxus = { version = "0.6", features = ["macro", "hooks"], default-features = false }
 skia-safe = {  version = "0.82", features = ["gl", "textlayout", "svg"] }
+rfd = "0.16"

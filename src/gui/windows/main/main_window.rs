@@ -1,24 +1,25 @@
 use std::sync::{Arc, Mutex, RwLock};
 use freya::prelude::*;
 use skia_safe::Bitmap;
-use crate::core::data::layer::Layer;
-use crate::core::data::project::Project;
+use crate::core::data::Session;
+use crate::core::data::Layer;
+use crate::core::data::Project;
+use crate::core::logics::Console;
+use crate::core::services::Services;
+use crate::FreyaServices;
 use crate::gui::components::canvas::Canvas;
-use crate::gui::components::docks::layer_detail_dock::LayerDetailDock;
-use crate::gui::components::docks::layer_tree_dock::{LayerTreeItemProps, LayerTreeDock};
+use crate::gui::components::docks::layer::{LayerDockProps, LayerDock, LayerDockItemProps};
+use crate::gui::services::RfdFileDialogService;
 use crate::gui::windows::main::main_menu::MainMenu;
 
 #[component]
-pub fn MainWindow() -> Element {
-    let mut project = Project::new(4000, 2000);
-    project.add_layer(String::from("Layer 1"));
-
-    rsx!(
+pub fn MainWindow(props: MainWindowProps) -> Element {
+    rsx! {
         Body {
             direction: "vertical",
             width: "fill",
             height: "fill",
-            MainMenu { },
+            MainMenu { console: props.console },
             ResizableContainer {
                 direction: "horizontal",
                 ResizablePanel {
@@ -30,15 +31,17 @@ pub fn MainWindow() -> Element {
                     initial_size: 30.0,
                     rect {
                         direction: "vertical",
-                        LayerDetailDock {
-                            opacity: { project.layers.first().unwrap().opacity }
+                        LayerDock {
+                            ..{ LayerDockProps::new(&props.console.read().session) }
                         },
-                        LayerTreeDock {
-                            items: { project.layers.iter().map(|layer| LayerTreeItemProps::new(&layer)).collect() }
-                        }
                     }
                 }
             }
         }
-    )
+    }
+}
+
+#[derive(PartialEq, Clone, Props)]
+pub struct MainWindowProps {
+    pub console: Signal<Console<FreyaServices>>,
 }

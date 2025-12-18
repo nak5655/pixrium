@@ -1,7 +1,10 @@
 use freya::prelude::*;
+use crate::core::data::Session;
+use crate::{FreyaServices};
+use crate::core::logics::{Commands, Console};
 
 #[component]
-pub fn MainMenu() -> Element {
+pub fn MainMenu(mut props: MainMenuProps) -> Element {
     let mut show_menu = use_signal(|| false);
 
     rsx!(
@@ -13,9 +16,10 @@ pub fn MainMenu() -> Element {
             Menu {
                 onclose: move |_| show_menu.set(false),
                 MenuButton {
+                    onpress: move |_| props.console.write().run(Commands::OpenFile),
                     label {
                         "Open"
-                    }
+                    },
                 }
                 MenuButton {
                     label {
@@ -42,4 +46,9 @@ pub fn MainMenu() -> Element {
             }
         }
     )
+}
+
+#[derive(PartialEq, Clone, Props)]
+pub struct MainMenuProps {
+    pub console: Signal<Console<FreyaServices>>,
 }
