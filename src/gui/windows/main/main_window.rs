@@ -1,16 +1,12 @@
-use std::sync::{Arc, Mutex, RwLock};
+use crate::core::data::Layer;
+use crate::core::logics::Console;
+use crate::gui::components::canvas::Canvas;
+use crate::gui::components::docks::layer::{LayerDock, LayerDockItemProps, LayerDockProps};
+use crate::gui::windows::main::main_menu::MainMenu;
+use crate::FreyaServices;
 use freya::prelude::*;
 use skia_safe::Bitmap;
-use crate::core::data::Session;
-use crate::core::data::Layer;
-use crate::core::data::Project;
-use crate::core::logics::Console;
-use crate::core::services::Services;
-use crate::FreyaServices;
-use crate::gui::components::canvas::Canvas;
-use crate::gui::components::docks::layer::{LayerDockProps, LayerDock, LayerDockItemProps};
-use crate::gui::services::RfdFileDialogService;
-use crate::gui::windows::main::main_menu::MainMenu;
+use std::sync::{Arc, Mutex, RwLock};
 
 #[component]
 pub fn MainWindow(props: MainWindowProps) -> Element {

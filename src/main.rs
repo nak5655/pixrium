@@ -1,9 +1,9 @@
-use freya::prelude::*;
-use crate::core::data::Session;
 use crate::core::data::Project;
+use crate::core::data::Session;
 use crate::core::logics::Console;
 use crate::core::services::Services;
-use crate::gui::services::RfdFileDialogService;
+use crate::gui::services::{FileDialogServiceImpl, MessageServiceImpl};
+use freya::prelude::*;
 
 mod gui;
 mod core;
@@ -11,18 +11,24 @@ mod core;
 use crate::gui::windows::main::main_window::MainWindow;
 
 fn main() {
-    launch(FreyaApp);
+    launch_with_title(FreyaApp, "Pixrium");
 }
 
 struct FreyaServices {
-    file_dialog: RfdFileDialogService,
+    file_dialog: FileDialogServiceImpl,
+    message: MessageServiceImpl,
 }
 
 impl Services for FreyaServices {
-    type FileDialogService = RfdFileDialogService;
+    type FileDialogService = FileDialogServiceImpl;
+    type MessageService = MessageServiceImpl;
 
-    fn file_dialog(&self) -> &RfdFileDialogService {
+    fn file_dialog(&self) -> &FileDialogServiceImpl {
         &self.file_dialog
+    }
+
+    fn message(&self) -> &MessageServiceImpl {
+        &self.message
     }
 }
 
@@ -31,7 +37,8 @@ fn FreyaApp() -> Element {
     let console = use_signal(|| Console::new(
         Session::new(),
         FreyaServices {
-            file_dialog: RfdFileDialogService { },
+            file_dialog: FileDialogServiceImpl { },
+            message: MessageServiceImpl { },
         }
     ));
 

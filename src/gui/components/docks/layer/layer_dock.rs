@@ -1,7 +1,7 @@
-use freya::prelude::*;
-use crate::core::data::Session;
 use crate::core::data::Layer;
+use crate::core::data::Session;
 use crate::gui::components::docks::layer::*;
+use freya::prelude::*;
 
 #[component]
 pub fn LayerDock(props: LayerDockProps) -> Element {

@@ -1,8 +1,7 @@
-use std::collections::HashMap;
 use crate::core::data::Session;
-use crate::core::logics::commands::{Command, Commands};
-use crate::core::logics::OpenFileCommand;
+use crate::core::logics::commands::*;
 use crate::core::services::Services;
+use std::collections::HashMap;
 
 pub struct Console<S: Services> {
     pub(crate) session: Session,
@@ -19,12 +18,13 @@ impl<S: Services> Console<S> {
         };
 
         console.register(Commands::OpenFile, Box::new(OpenFileCommand {}));
+        console.register(Commands::ShowVersion, Box::new(ShowVersionCommand {}));
 
         console
     }
 
     pub fn register(&mut self, key: Commands, command: Box<dyn Command<S>>) {
-        self.commands.insert(Commands::OpenFile, command);
+        self.commands.insert(key, command);
     }
 
     pub fn run(&mut self, key: Commands) {

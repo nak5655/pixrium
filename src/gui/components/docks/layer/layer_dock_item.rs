@@ -1,5 +1,5 @@
-use freya::prelude::*;
 use crate::core::data::Layer;
+use freya::prelude::*;
 
 #[component]
 pub fn LayerDockItem(props: LayerDockItemProps) -> Element {

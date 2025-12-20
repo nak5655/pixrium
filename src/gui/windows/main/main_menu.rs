@@ -1,7 +1,8 @@
-use freya::prelude::*;
 use crate::core::data::Session;
-use crate::{FreyaServices};
-use crate::core::logics::{Commands, Console};
+use crate::core::logics::commands::Commands;
+use crate::core::logics::Console;
+use crate::FreyaServices;
+use freya::prelude::*;
 
 #[component]
 pub fn MainMenu(mut props: MainMenuProps) -> Element {
@@ -10,37 +11,45 @@ pub fn MainMenu(mut props: MainMenuProps) -> Element {
     rsx!(
         Button {
             onpress: move |_| show_menu.toggle(),
-            label { "Open Menu" }
+            label { "Menu" }
         },
         if *show_menu.read() {
             Menu {
                 onclose: move |_| show_menu.set(false),
-                MenuButton {
-                    onpress: move |_| props.console.write().run(Commands::OpenFile),
-                    label {
-                        "Open"
-                    },
-                }
-                MenuButton {
-                    label {
-                        "Save"
-                    }
-                }
                 SubMenu {
                     menu: rsx!(
                         MenuButton {
+                            onpress: move |_| props.console.write().run(Commands::OpenFile),
                             label {
-                                "Some option"
+                                "Open"
+                            },
+                        }
+                        MenuButton {
+                            label {
+                                "Save"
+                            }
+                        }
+                        MenuButton {
+                            label {
+                                "Close"
                             }
                         }
                     ),
                     label {
-                        "Options"
-                    }
+                        "File"
+                    },
                 }
-                MenuButton {
+                SubMenu {
+                    menu: rsx!(
+                        MenuButton {
+                            onpress: move |_| props.console.write().run(Commands::ShowVersion),
+                            label {
+                                "Version"
+                            }
+                        }
+                    ),
                     label {
-                        "Close"
+                        "Help"
                     }
                 }
             }

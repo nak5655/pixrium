@@ -3,10 +3,6 @@
     windows_subsystem = "windows"
 )]
 
-use std::{
-    sync::Arc,
-    time::Instant,
-};
 use freya::prelude::*;
 use skia_safe::{
     Color,
@@ -14,6 +10,10 @@ use skia_safe::{
     Paint,
     Rect,
     RuntimeEffect,
+};
+use std::{
+    sync::Arc,
+    time::Instant,
 };
 
 const SHADER: &str = "

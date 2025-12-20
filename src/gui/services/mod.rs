@@ -1,3 +1,6 @@
-mod rfd_file_dialog_service;
+mod file_dialog_service;
+mod message_service;
 
-pub use rfd_file_dialog_service::RfdFileDialogService;
+pub use file_dialog_service::*;
+
+pub use message_service::*;
