@@ -6,7 +6,7 @@ pub fn load_bitmap(path: PathBuf, color_type: ColorType, alpha_type: AlphaType, 
     let data = Data::new_copy(std::fs::read(path.clone()).unwrap().as_slice());
 
     // make image
-    let image = match (Image::from_encoded(data)) {
+    let image = match Image::from_encoded(data) {
         Some(image) => image,
         None => return Err("failed to decode image.".into()),
     };
@@ -23,11 +23,11 @@ pub fn load_bitmap(path: PathBuf, color_type: ColorType, alpha_type: AlphaType, 
     bitmap.alloc_pixels_info(&image_info, None);
 
     // make pixmap
-    let mut pixmap = match (bitmap.peek_pixels()) {
+    let mut pixmap = match bitmap.peek_pixels() {
         Some(pixmap) => pixmap,
         None => return Err("failed to peek pixels.".into()),
     };
-    let mut pixels = match (pixmap.bytes_mut()) {
+    let pixels = match pixmap.bytes_mut() {
         Some(pixels) => pixels,
         None => return Err("failed to read bytes of pixels.".into()),
     };

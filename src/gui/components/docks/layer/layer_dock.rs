@@ -1,54 +1,41 @@
-use crate::core::data::Layer;
-use crate::core::data::Session;
+use crate::core::logics::commands::ChangeLayerOpacityCommand;
+use crate::core::logics::Console;
 use crate::gui::components::docks::layer::*;
+use crate::FreyaServices;
 use freya::prelude::*;
 
 #[component]
-pub fn LayerDock(props: LayerDockProps) -> Element {
-    rsx!(
+pub fn LayerDock(
+    console: Signal<Console<FreyaServices>>,
+    opacity: Option<f32>,
+    items: Option<Vec<LayerDockItemProps>>,
+) -> Element {
+    rsx! {
         rect {
             direction: "vertical",
+            width: "fill",
             label {
                 "Layers"
             },
             Slider {
                 size: "80%",
-                value: props.opacity.map(|opacity|  100.0 * opacity as f64).unwrap_or_default(),
+                value: opacity.map(|opacity|  100.0 * opacity as f64).unwrap_or_default(),
                 onmoved: move |p| {
-
+                    console.write().execute(&ChangeLayerOpacityCommand {
+                        opacity: (p * 0.01) as f32,
+                    })
                 }
             },
             ScrollView {
                 direction: "vertical",
                 width: "fill",
                 height: "fill",
-                for item in props.items.unwrap_or_default() {
-                    LayerDockItem { ..item }
+                for item in items.unwrap_or_default().iter() {
+                    LayerDockItem {
+                        name: item.name.clone()
+                    }
                 }
             }
-        }
-    )
-}
-
-#[derive(PartialEq, Clone, Props)]
-pub struct LayerDockProps {
-    opacity: Option<f32>,
-    items: Option<Vec<LayerDockItemProps>>,
-}
-
-impl LayerDockProps {
-    pub fn new(session: &Session) -> Self {
-        Self {
-            opacity: session.project.as_ref().and_then(|project| {
-                project.layers.first().map(|layer| {
-                    layer.opacity
-                })
-            }),
-            items: session.project.as_ref().map(|project| {
-                project.layers.iter().map(|layer|
-                    LayerDockItemProps::new(layer)
-                ).collect()
-            }),
         }
     }
 }

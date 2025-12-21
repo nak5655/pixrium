@@ -1,4 +1,3 @@
-use crate::core::data::Project;
 use crate::core::data::Session;
 use crate::core::logics::Console;
 use crate::core::services::Services;

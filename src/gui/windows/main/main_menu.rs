@@ -1,11 +1,12 @@
-use crate::core::data::Session;
-use crate::core::logics::commands::Commands;
+use crate::core::logics::commands::{OpenFileCommand, ShowVersionCommand};
 use crate::core::logics::Console;
 use crate::FreyaServices;
 use freya::prelude::*;
 
 #[component]
-pub fn MainMenu(mut props: MainMenuProps) -> Element {
+pub fn MainMenu(
+    console: Signal<Console<FreyaServices>>
+) -> Element {
     let mut show_menu = use_signal(|| false);
 
     rsx!(
@@ -19,7 +20,9 @@ pub fn MainMenu(mut props: MainMenuProps) -> Element {
                 SubMenu {
                     menu: rsx!(
                         MenuButton {
-                            onpress: move |_| props.console.write().run(Commands::OpenFile),
+                            onpress: move |_| {
+                                console.write().execute(&OpenFileCommand { })
+                            },
                             label {
                                 "Open"
                             },
@@ -42,7 +45,9 @@ pub fn MainMenu(mut props: MainMenuProps) -> Element {
                 SubMenu {
                     menu: rsx!(
                         MenuButton {
-                            onpress: move |_| props.console.write().run(Commands::ShowVersion),
+                            onpress: move |_| {
+                                console.write().execute(&ShowVersionCommand { })
+                            },
                             label {
                                 "Version"
                             }
@@ -57,7 +62,3 @@ pub fn MainMenu(mut props: MainMenuProps) -> Element {
     )
 }
 
-#[derive(PartialEq, Clone, Props)]
-pub struct MainMenuProps {
-    pub console: Signal<Console<FreyaServices>>,
-}

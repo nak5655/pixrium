@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-freya = "0.3"
+freya = { version = "0.3", features = ["devtools"] }
 dioxus = { version = "0.6", features = ["macro", "hooks"], default-features = false }
 skia-safe = {  version = "0.82", features = ["gl", "textlayout", "svg"] }
 rfd = "0.16"
