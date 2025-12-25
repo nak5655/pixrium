@@ -1,5 +1,6 @@
-mod project;
+mod input_events;
 mod layer;
+mod project;
 mod session;
 
 pub use layer::*;
