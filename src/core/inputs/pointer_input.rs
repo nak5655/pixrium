@@ -1,4 +1,5 @@
 use skia_safe::Point;
+use crate::core::inputs::Input;
 
 pub enum PointerButton {
     Left,
@@ -6,13 +7,14 @@ pub enum PointerButton {
     Middle,
 }
 
-pub enum PointerEvent {
+pub enum PointerInput {
     Down {
         button: PointerButton,
         viewport_position: Point,
         uv_position: Point,
     },
     Move {
+        button: PointerButton,
         viewport_position: Point,
         uv_position: Point,
     },
@@ -20,5 +22,5 @@ pub enum PointerEvent {
         button: PointerButton,
         viewport_position: Point,
         uv_position: Point,
-    },
+    }
 }

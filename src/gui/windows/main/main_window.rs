@@ -42,6 +42,7 @@ pub fn MainWindow(console: Signal<Console<FreyaServices>>) -> Element {
                 ResizablePanel {
                     initial_size: 70.0,
                     CanvasInput {
+                        console,
                         CanvasView { }
                     }
                 },

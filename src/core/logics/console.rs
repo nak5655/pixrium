@@ -1,4 +1,5 @@
-use crate::core::data::Session;
+use crate::core::data::{Session};
+use crate::core::inputs::Input;
 use crate::core::logics::commands::*;
 use crate::core::services::Services;
 
@@ -16,5 +17,7 @@ impl<S: Services> Console<S> {
         command.execute(&self.services, &mut self.session)
     }
 
-    pub fn input(&mut self) {}
+    pub fn input(&mut self, input: &Input) {
+        self.session.input(input)
+    }
 }

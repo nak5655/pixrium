@@ -1,8 +1,10 @@
+use std::collections::HashMap;
 use crate::core::data::Session;
 use crate::core::logics::Console;
 use crate::core::services::Services;
 use crate::gui::services::{FileDialogServiceImpl, MessageServiceImpl};
 use freya::prelude::*;
+use crate::core::logics::tools::{PanTool, Tool, Tools};
 
 mod gui;
 mod core;
@@ -33,12 +35,19 @@ impl Services for FreyaServices {
 
 #[component]
 fn FreyaApp() -> Element {
+    let services = FreyaServices {
+        file_dialog: FileDialogServiceImpl { },
+        message: MessageServiceImpl { },
+    };
+
+    let mut tools: HashMap<Tools, Box<dyn Tool>> = HashMap::new();
+    tools.insert(Tools::Pan, Box::new(PanTool::new()));
+
+    let session = Session::new(tools);
+
     let console = use_signal(|| Console::new(
-        Session::new(),
-        FreyaServices {
-            file_dialog: FileDialogServiceImpl { },
-            message: MessageServiceImpl { },
-        }
+        session,
+        services
     ));
 
     rsx! {
