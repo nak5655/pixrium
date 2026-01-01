@@ -1,14 +1,16 @@
-use crate::core::services::file_dialog_service::FileDialogService;
-use crate::core::services::message_service::MessageService;
+mod dialog_service;
+mod canvas_service;
 
-pub mod file_dialog_service;
-pub mod message_service;
+pub use dialog_service::*;
+pub use canvas_service::*;
 
 pub trait Services {
-    type FileDialogService: FileDialogService;
-    type MessageService: MessageService;
+    type DialogService: DialogService;
+    type CanvasService: CanvasService;
 
-    fn file_dialog(&self) -> &Self::FileDialogService;
+    fn dialog(&self) -> &Self::DialogService;
 
-    fn message(&self) -> &Self::MessageService;
+    fn canvas(&self) -> &Self::CanvasService;
+
+    fn canvas_mut(&mut self) -> &mut Self::CanvasService;
 }

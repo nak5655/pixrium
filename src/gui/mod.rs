@@ -1,3 +1,3 @@
 pub mod windows;
-mod components;
+pub mod components;
 pub mod services;

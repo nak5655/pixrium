@@ -1,4 +1,8 @@
-pub trait MessageService {
+use std::path::PathBuf;
+
+pub trait DialogService {
+    fn open_image(&self) -> Option<PathBuf>;
+
     #[allow(unused)]
     fn show_info(&self, title: String, message: String);
 

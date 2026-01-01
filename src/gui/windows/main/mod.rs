@@ -1,2 +1,6 @@
-pub mod main_window;
-pub mod main_menu;
+mod main_window;
+mod main_menu;
+
+pub use main_window::*;
+
+pub use main_menu::*;

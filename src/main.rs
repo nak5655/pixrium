@@ -1,56 +1,69 @@
 use std::collections::HashMap;
-use crate::core::data::Session;
+use crate::core::data::{Project, Session};
 use crate::core::logics::Console;
 use crate::core::services::Services;
-use crate::gui::services::{FileDialogServiceImpl, MessageServiceImpl};
+use crate::gui::services::{CanvasServiceImpl, DialogServiceImpl};
 use freya::prelude::*;
 use crate::core::logics::tools::{PanTool, Tool, Tools};
+use crate::gui::components::canvas::CanvasState;
 
 mod gui;
 mod core;
 
-use crate::gui::windows::main::main_window::MainWindow;
+use crate::gui::windows::main::main_window;
 
 fn main() {
-    launch_with_title(FreyaApp, "Pixrium");
+    launch_with_title(app, "Pixrium")
 }
 
 struct FreyaServices {
-    file_dialog: FileDialogServiceImpl,
-    message: MessageServiceImpl,
+    dialog_service: DialogServiceImpl,
+    canvas_service: CanvasServiceImpl,
 }
 
 impl Services for FreyaServices {
-    type FileDialogService = FileDialogServiceImpl;
-    type MessageService = MessageServiceImpl;
+    type DialogService = DialogServiceImpl;
+    type CanvasService = CanvasServiceImpl;
 
-    fn file_dialog(&self) -> &FileDialogServiceImpl {
-        &self.file_dialog
+    fn dialog(&self) -> &Self::DialogService {
+        &self.dialog_service
     }
 
-    fn message(&self) -> &MessageServiceImpl {
-        &self.message
+    fn canvas(&self) -> &Self::CanvasService {
+        &self.canvas_service
+    }
+
+    fn canvas_mut(&mut self) -> &mut Self::CanvasService {
+        &mut self.canvas_service
     }
 }
 
 #[component]
-fn FreyaApp() -> Element {
+fn app() -> Element {
     let services = FreyaServices {
-        file_dialog: FileDialogServiceImpl { },
-        message: MessageServiceImpl { },
+        dialog_service: DialogServiceImpl {},
+        canvas_service: CanvasServiceImpl {
+            canvas_state: use_signal(|| CanvasState::new())
+        },
     };
 
-    let mut tools: HashMap<Tools, Box<dyn Tool>> = HashMap::new();
+    let mut tools: HashMap<Tools, Box<dyn Tool<FreyaServices>>> = HashMap::new();
     tools.insert(Tools::Pan, Box::new(PanTool::new()));
 
-    let session = Session::new(tools);
+    let mut session = Session::new();
+    session.project = Some(Project::new(1, 1));
 
     let console = use_signal(|| Console::new(
         session,
-        services
+        services,
+        tools,
     ));
 
     rsx! {
-        MainWindow { console }
+        rect {
+            main_window {
+                console
+            }
+        }
     }
 }

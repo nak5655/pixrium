@@ -1,6 +1,7 @@
 use skia_safe::Point;
 use crate::core::inputs::Input;
 
+#[derive(Copy, Clone)]
 pub enum PointerButton {
     Left,
     Right,

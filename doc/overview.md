@@ -5,38 +5,34 @@ title: Overview
 
 flowchart TB
 
-subgraph gui
+subgraph core
     direction TB
-    MainWindow --> Canvas
-    MainWindow --> MainMenu
-    
-    Canvas --> Console
-    MainMenu --> Console
-    
-    subgraph core
+
+    subgraph data
         direction TB
-
-        subgraph data
-            direction TB
-            Command --> Session
-            Session --> Project
-            Project --> Layer
-        end
-
-        Console --> Command
-        Command --> Service
-        Service --> Session
-        
-        Session --> Tool
-        Tool --> Layer
+        Session --> Project
+        Project --> Layer
     end
-    
-    Service --> FreyaService
+
+    Console --> Command & Service & Tool & Session
+    Command & Tool -.-> Service & Session
 end
 
-FreyaService --> Freya
-FreyaService --> rfd
+subgraph gui
+    direction TB
+    MainWindow --> Canvas & MainMenu
+    
+    Canvas -.-> Console
+    MainMenu -.-> Console
+    
+    Canvas -.-> State
+    CanvasService --> State
+    Service -.DI.-> CanvasService & FreyaService
+end
 
-Command --> skia-safe
-Layer --> skia-safe
+FreyaService -.-> Freya
+FreyaService -.-> rfd
+
+Command -.-> skia-safe
+Layer -.-> skia-safe
 ```

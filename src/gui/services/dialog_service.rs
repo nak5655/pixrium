@@ -1,12 +1,13 @@
-use crate::core::services::message_service::MessageService;
-use rfd::{MessageButtons, MessageDialog, MessageLevel};
+use crate::core::services::DialogService;
+use rfd::{FileDialog, MessageButtons, MessageDialog, MessageLevel};
+use std::path::PathBuf;
 use std::thread::spawn;
 
-pub struct MessageServiceImpl {
+pub struct DialogServiceImpl {
 
 }
 
-impl MessageServiceImpl {
+impl DialogServiceImpl {
     fn show_message(&self, title: String, message: String, level: MessageLevel) {
         spawn(move || {
             let _ = MessageDialog::new()
@@ -19,7 +20,15 @@ impl MessageServiceImpl {
     }
 }
 
-impl MessageService for MessageServiceImpl {
+impl DialogService for DialogServiceImpl {
+    fn open_image(&self) -> Option<PathBuf> {
+        FileDialog::new()
+            .add_filter("HDR image", &["hdr"])
+            .add_filter("image", &["jpg", "png"])
+            .set_directory("/")
+            .pick_file()
+    }
+
     fn show_info(&self, title: String, message: String) {
         self.show_message(title, message, MessageLevel::Info)
     }
@@ -36,3 +45,4 @@ impl MessageService for MessageServiceImpl {
         self.show_message(title, message, MessageLevel::Error)
     }
 }
+
