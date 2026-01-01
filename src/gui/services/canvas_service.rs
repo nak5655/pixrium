@@ -25,6 +25,10 @@ impl CanvasService for CanvasServiceImpl {
         self.canvas_state.peek().viewport_bounds
     }
 
+    fn fov(&self) -> f32 {
+        self.canvas_state.peek().fov.0
+    }
+
     fn pan(&mut self, look_at: Vec3, right: Vec3) {
         self.canvas_state.with_mut(|s| {
             s.look_at = look_at;

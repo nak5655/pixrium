@@ -40,10 +40,12 @@ impl Services for FreyaServices {
 
 #[component]
 fn app() -> Element {
+    let canvas_state = use_signal(|| CanvasState::new());
+
     let services = FreyaServices {
         dialog_service: DialogServiceImpl {},
         canvas_service: CanvasServiceImpl {
-            canvas_state: use_signal(|| CanvasState::new())
+            canvas_state
         },
     };
 
@@ -62,7 +64,8 @@ fn app() -> Element {
     rsx! {
         rect {
             main_window {
-                console
+                console,
+                canvas_state,
             }
         }
     }

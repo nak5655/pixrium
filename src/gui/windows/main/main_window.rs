@@ -6,7 +6,7 @@ use crate::FreyaServices;
 use freya::prelude::*;
 
 #[component]
-pub fn main_window(mut console: Signal<Console<FreyaServices>>) -> Element {
+pub fn main_window(mut console: Signal<Console<FreyaServices>>, mut canvas_state: Signal<CanvasState>) -> Element {
     let layer_opacity = use_memo(move || {
         console
             .read()
@@ -29,10 +29,6 @@ pub fn main_window(mut console: Signal<Console<FreyaServices>>) -> Element {
                 })
                 .collect()
         })
-    });
-
-    let canvas_state = use_signal(move || {
-        CanvasState::new()
     });
 
     let (_, size) = use_node_signal();
@@ -75,11 +71,14 @@ pub fn main_window(mut console: Signal<Console<FreyaServices>>) -> Element {
                 height: "auto",
                 width: "fill",
                 label {
-                    { canvas_state.read().look_at.to_string() }
+                    { format!("{:.2}, {:.2}, {:.2}"
+                        , canvas_state.read().look_at.x
+                        , canvas_state.read().look_at.y
+                        , canvas_state.read().look_at.z) }
                 },
                 label {
-                    { format!("{:?}", size.read().area) }
-                }
+                    { format!("{:.2}", canvas_state.read().fov.0) }
+                },
             }
         }
     }

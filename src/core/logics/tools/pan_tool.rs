@@ -1,15 +1,15 @@
-use glam::{vec3, Quat, Vec3};
+use glam::{vec3, Quat, Vec2, Vec3};
 use skia_safe::Point;
 use crate::core::data::Project;
 use crate::core::inputs::pointer_input::PointerInput;
 use crate::core::logics::tools::{EventHandling, Tool};
-use crate::core::math::LatLon;
+use crate::core::math::{LatLon, Radian};
 use crate::core::services::{CanvasService, Services};
 use crate::latlon;
 
 pub struct PanTool {
     is_dragging: bool,
-    drag_start_position: Point,
+    drag_start_position: Vec2,
     drag_start_look_at: Vec3,
 }
 
@@ -17,7 +17,7 @@ impl PanTool {
     pub fn new() -> Self {
         Self {
             is_dragging: false,
-            drag_start_position: Point::default(),
+            drag_start_position: Vec2::default(),
             drag_start_look_at: Vec3::default(),
         }
     }
@@ -36,12 +36,12 @@ impl <S: Services> Tool<S> for PanTool {
                     let viewport_bounds = services.canvas().viewport_bounds();
                     let pointer_delta = self.drag_start_position - *viewport_position;
 
-                    let yaw = pointer_delta.x / viewport_bounds.x;
+                    let yaw = -pointer_delta.x / viewport_bounds.x;
                     let pitch = -pointer_delta.y / viewport_bounds.y;
                     let quat = Quat::from_axis_angle(services.canvas().up(), yaw)
                         .mul_quat(Quat::from_axis_angle(services.canvas().right(), -pitch));
 
-                    let look_at = quat.mul_vec3(services.canvas().look_at()).normalize();
+                    let look_at = quat.mul_vec3(self.drag_start_look_at).normalize();
                     let right = calc_right(look_at);
 
                     services.canvas_mut().pan(look_at, right);
@@ -50,6 +50,11 @@ impl <S: Services> Tool<S> for PanTool {
             PointerInput::Up { button, viewport_position, uv_position } => {
                 self.is_dragging = false;
             }
+            PointerInput::ScrollY { delta, viewport_position, uv_position } => {
+                let fov = services.canvas().fov() + delta;
+                services.canvas_mut().zoom(Radian(fov));
+            }
+            _ => return EventHandling::None
         }
 
         EventHandling::Captured

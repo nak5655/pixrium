@@ -1,4 +1,5 @@
 mod pan_tool;
+mod zoom_tool;
 
 pub use pan_tool::*;
 use crate::core::data::{Project, Session};

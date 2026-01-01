@@ -10,6 +10,8 @@ pub trait CanvasService {
 
     fn viewport_bounds(&self) -> Vec2;
 
+    fn fov(&self) -> f32;
+
     #[allow(unused)]
     fn pan(&mut self, look_at: Vec3, right: Vec3);
 

@@ -18,6 +18,8 @@ pub fn use_sphere_canvas(canvas_state: Signal<CanvasState>) -> UseCanvas {
         // 視点ベクトルから見て右ベクトルと直交
         let up = right.cross(look_at).normalize();
 
+        let viewport_size = state.viewport_bounds;
+
         move |ctx| {
             //
             let image = Image::from_encoded(Data::new_copy(include_bytes!("./sample.jpg"))).unwrap();
@@ -38,6 +40,10 @@ pub fn use_sphere_canvas(canvas_state: Signal<CanvasState>) -> UseCanvas {
             builder.set(
                 "uAov",
                 UniformValue::Float(fov),
+            );
+            builder.set(
+                "uViewportSize",
+                UniformValue::FloatVec(vec![viewport_size.x, viewport_size.y]),
             );
             builder.set(
                 "uTexSize",

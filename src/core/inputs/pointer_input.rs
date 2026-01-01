@@ -1,3 +1,4 @@
+use glam::Vec2;
 use skia_safe::Point;
 use crate::core::inputs::Input;
 
@@ -11,17 +12,27 @@ pub enum PointerButton {
 pub enum PointerInput {
     Down {
         button: PointerButton,
-        viewport_position: Point,
-        uv_position: Point,
+        viewport_position: Vec2,
+        uv_position: Vec2,
     },
     Move {
         button: PointerButton,
-        viewport_position: Point,
-        uv_position: Point,
+        viewport_position: Vec2,
+        uv_position: Vec2,
     },
     Up {
         button: PointerButton,
-        viewport_position: Point,
-        uv_position: Point,
+        viewport_position: Vec2,
+        uv_position: Vec2,
+    },
+    ScrollX {
+        delta: f32,
+        viewport_position: Vec2,
+        uv_position: Vec2,
+    },
+    ScrollY {
+        delta: f32,
+        viewport_position: Vec2,
+        uv_position: Vec2,
     }
 }

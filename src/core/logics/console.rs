@@ -7,7 +7,7 @@ use crate::core::services::Services;
 
 pub struct Console<S: Services> {
     pub session: Session,
-    services: S,
+    pub services: S,
     pub tools: HashMap<Tools, Box<dyn Tool<S>>>,
     current_tool: Tools,
 }
