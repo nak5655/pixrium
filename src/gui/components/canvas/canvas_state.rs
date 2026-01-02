@@ -15,7 +15,7 @@ impl CanvasState {
     pub fn new() -> Self {
         Self {
             look_at: vec3(1.0, 0.0, 0.0),
-            right: vec3(0.0, 1.0, 0.0),
+            right: vec3(0.0, 0.0, 1.0),
             fov: Radian(PI * 0.25),
             viewport_bounds: Vec2::default()
         }

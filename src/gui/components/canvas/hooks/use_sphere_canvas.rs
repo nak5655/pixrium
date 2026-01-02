@@ -42,8 +42,12 @@ pub fn use_sphere_canvas(canvas_state: Signal<CanvasState>) -> UseCanvas {
                 UniformValue::Float(fov),
             );
             builder.set(
+                "uViewportPosition",
+                UniformValue::FloatVec(vec![ctx.area.min_x(), ctx.area.min_y()]),
+            );
+            builder.set(
                 "uViewportSize",
-                UniformValue::FloatVec(vec![viewport_size.x, viewport_size.y]),
+                UniformValue::FloatVec(vec![ctx.area.width(), ctx.area.height()]),
             );
             builder.set(
                 "uTexSize",

@@ -2,9 +2,13 @@ use freya::prelude::*;
 
 #[component]
 pub fn LayerDockItem(name: String) -> Element {
-    rsx!(
-        label {
-            { name }
+    rsx! {
+        rect {
+            width: "fill",
+            height: "auto",
+            label {
+                { name }
+            }
         }
-    )
+    }
 }
