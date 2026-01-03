@@ -25,13 +25,8 @@ pub enum PointerInput {
         viewport_position: Vec2,
         uv_position: Vec2,
     },
-    ScrollX {
-        delta: f32,
-        viewport_position: Vec2,
-        uv_position: Vec2,
-    },
-    ScrollY {
-        delta: f32,
+    Scroll {
+        delta: Vec2,
         viewport_position: Vec2,
         uv_position: Vec2,
     }

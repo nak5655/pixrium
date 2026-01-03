@@ -1,7 +1,8 @@
 use glam::{vec3, Quat, Vec2, Vec3};
 use skia_safe::Point;
 use crate::core::data::Project;
-use crate::core::inputs::pointer_input::PointerInput;
+use crate::core::inputs::KeyboardInput;
+use crate::core::inputs::PointerInput;
 use crate::core::logics::tools::{EventHandling, Tool};
 use crate::core::math::{LatLon, Radian};
 use crate::core::services::{CanvasService, Services};
@@ -50,14 +51,14 @@ impl <S: Services> Tool<S> for PanTool {
             PointerInput::Up { button, viewport_position, uv_position } => {
                 self.is_dragging = false;
             }
-            PointerInput::ScrollY { delta, viewport_position, uv_position } => {
-                let fov = services.canvas().fov() + delta;
-                services.canvas_mut().zoom(Radian(fov));
-            }
             _ => return EventHandling::None
         }
 
         EventHandling::Captured
+    }
+
+    fn keyboard_input(&mut self, input: &KeyboardInput, project: &mut Project, services: &mut S) -> EventHandling {
+        EventHandling::None
     }
 }
 

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use crate::core::data::{Project, Session};
 use crate::core::logics::Console;
 use crate::core::services::Services;
+use crate::core::services::ConfigService;
 use crate::gui::services::{CanvasServiceImpl, DialogServiceImpl};
 use freya::prelude::*;
 use crate::core::logics::tools::{PanTool, Tool, Tools};
@@ -19,6 +20,7 @@ fn main() {
 struct FreyaServices {
     dialog_service: DialogServiceImpl,
     canvas_service: CanvasServiceImpl,
+    config_service: ConfigService,
 }
 
 impl Services for FreyaServices {
@@ -36,6 +38,10 @@ impl Services for FreyaServices {
     fn canvas_mut(&mut self) -> &mut Self::CanvasService {
         &mut self.canvas_service
     }
+
+    fn config(&self) -> &ConfigService {
+        &self.config_service
+    }
 }
 
 #[component]
@@ -47,10 +53,8 @@ fn app() -> Element {
         canvas_service: CanvasServiceImpl {
             canvas_state
         },
+        config_service: ConfigService::new(),
     };
-
-    let mut tools: HashMap<Tools, Box<dyn Tool<FreyaServices>>> = HashMap::new();
-    tools.insert(Tools::Pan, Box::new(PanTool::new()));
 
     let mut session = Session::new();
     session.project = Some(Project::new(1, 1));
@@ -58,7 +62,6 @@ fn app() -> Element {
     let console = use_signal(|| Console::new(
         session,
         services,
-        tools,
     ));
 
     rsx! {

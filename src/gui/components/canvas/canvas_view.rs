@@ -10,8 +10,8 @@ use std::{
     time::Instant,
 };
 use glam::{vec2, Vec2, Vec3};
-use crate::core::inputs::Input;
-use crate::core::inputs::pointer_input::{PointerButton, PointerInput};
+use crate::core::inputs::{Input, KeyboardInput};
+use crate::core::inputs::{PointerButton, PointerInput};
 use crate::core::logics::Console;
 use crate::core::math::Radian;
 use crate::core::services::{CanvasService, Services};
@@ -52,7 +52,7 @@ pub fn CanvasView(console: Signal<Console<FreyaServices>>, canvas_state: Signal<
                 match get_button(&event) {
                     Some(button) => {
                         pressed_button.set(Some(button));
-                        console.write().input(&Input::PointerInput(PointerInput::Down {
+                        console.write().input(&Input::Pointer(PointerInput::Down {
                             button,
                             viewport_position: get_viewport_position(&event),
                             uv_position: get_uv_position(&event),
@@ -64,7 +64,7 @@ pub fn CanvasView(console: Signal<Console<FreyaServices>>, canvas_state: Signal<
             onmousemove: move |event| {
                 match *pressed_button.peek() {
                     Some(button) => {
-                        console.write().input(&Input::PointerInput(PointerInput::Move {
+                        console.write().input(&Input::Pointer(PointerInput::Move {
                             button,
                             viewport_position: get_viewport_position(&event),
                             uv_position: get_uv_position(&event),
@@ -78,7 +78,7 @@ pub fn CanvasView(console: Signal<Console<FreyaServices>>, canvas_state: Signal<
             onmouseup: move |event| {
                 match *pressed_button.peek() {
                     Some(button) => {
-                        console.write().input(&Input::PointerInput(PointerInput::Up {
+                        console.write().input(&Input::Pointer(PointerInput::Up {
                             button,
                             viewport_position: get_viewport_position(&event),
                             uv_position: get_uv_position(&event),
@@ -89,15 +89,16 @@ pub fn CanvasView(console: Signal<Console<FreyaServices>>, canvas_state: Signal<
                 pressed_button.set(None);
             },
             onwheel: move |event| {
-                console.write().input(&Input::PointerInput(PointerInput::ScrollX {
-                    delta: event.data.get_delta_y() as f32,
+                console.write().input(&Input::Pointer(PointerInput::Scroll {
+                    delta: vec2(event.data.get_delta_x() as f32, event.data.get_delta_y() as f32),
                     viewport_position: least_viewport_position.peek().clone(),
                     uv_position: least_uv_position.peek().clone()
                 }))
             },
             onglobalkeydown: move |event| {
-                let fov = canvas_state.peek().fov.0 * 1.1;
-                console.write().services.canvas_mut().zoom(Radian(fov));
+                console.write().input(&Input::Keyboard(KeyboardInput::Down {
+                    key: get_key(&event),
+                }))
             }
         }
     }
@@ -122,4 +123,11 @@ fn get_uv_position(event: &Event<MouseData>) -> Vec2 {
     // TODO
     let coords = event.element_coordinates;
     Vec2::new(coords.x as f32, coords.y as f32)
+}
+
+fn get_key(event: &Event<KeyboardData>) -> crate::core::inputs::Key {
+    match &event.key {
+        Key::Character(s) => crate::core::inputs::Key::Character(s.clone()),
+        _ => crate::core::inputs::Key::Unidentified,
+    }
 }
