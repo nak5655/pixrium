@@ -1,6 +1,5 @@
-mod file_dialog_service;
-mod message_service;
+mod dialog_service;
+mod canvas_service;
 
-pub use file_dialog_service::*;
-
-pub use message_service::*;
+pub use dialog_service::*;
+pub use canvas_service::*;
