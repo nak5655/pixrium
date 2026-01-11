@@ -10,6 +10,7 @@ pub struct Session {
     pub project: Option<Project>,
     pub selected_layer_index: usize,
     pub viewport_state: ViewportState,
+    preview: Option<Image>,
 }
 
 impl Session {
@@ -18,6 +19,7 @@ impl Session {
             project: None,
             selected_layer_index: 0,
             viewport_state: ViewportState::new(),
+            preview: None,
         }
     }
 
@@ -54,10 +56,15 @@ impl Session {
         }
     }
 
-    pub fn preview_image(&self) -> Option<Image> {
-        self.selected_layer()
+    pub fn update_preview(&mut self) {
+        self.preview = self
+            .selected_layer()
             .map(|layer| raster_from_bitmap(&layer.bitmap))
-            .flatten()
+            .flatten();
+    }
+
+    pub fn preview(&self) -> Option<Image> {
+        self.preview.clone()
     }
 
     pub fn look_at(&self) -> Vec3 {

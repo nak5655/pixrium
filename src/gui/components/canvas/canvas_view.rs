@@ -38,7 +38,7 @@ pub fn canvas_view(mut console: State<Console<FreyaServices>>) -> impl IntoEleme
     rect()
         .width(Size::fill())
         .height(Size::fill())
-        .maybe_child(console.read().session.preview_image().map(|img| {
+        .maybe_child(console.read().session.preview().map(|img| {
             CanvasShader::new(
                 runtime_effect,
                 img,

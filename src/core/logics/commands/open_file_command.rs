@@ -23,6 +23,8 @@ impl<S: Services> Command<S> for OpenFileCommand {
 
                             // 作成したレイヤーを選択
                             session.selected_layer_index = project.layers.len() - 1;
+
+                            session.update_preview();
                         }
                     }
                     Err(err) => {
