@@ -1,16 +1,14 @@
 use crate::core::logics::Console;
 use crate::core::math::LatLon;
-use crate::gui::components::canvas::{canvas_view, CanvasState};
+use crate::gui::components::canvas::canvas_view;
 use crate::gui::components::docks::layer::layer_dock;
 use crate::gui::windows::main::main_menu;
 use crate::FreyaServices;
 use freya::prelude::*;
 
-pub fn main_window(
-    mut console: State<Console<FreyaServices>>,
-    mut canvas_state: State<CanvasState>,
-) -> impl IntoElement {
-    let look_at = use_memo(move || LatLon::from(canvas_state.read().look_at));
+pub fn main_window(mut console: State<Console<FreyaServices>>) -> impl IntoElement {
+    let look_at = use_memo(move || LatLon::from(console.read().session.viewport_state.look_at));
+    let fov = use_memo(move || console.read().session.viewport_state.fov.0);
 
     rect()
         .theme_background()
@@ -24,7 +22,7 @@ pub fn main_window(
                 .child(
                     ResizableContainer::new()
                         .direction(Direction::Horizontal)
-                        .panel(ResizablePanel::new(70.0).child(canvas_view(console, canvas_state)))
+                        .panel(ResizablePanel::new(70.0).child(canvas_view(console)))
                         .panel(
                             ResizablePanel::new(30.0).child(
                                 rect()
@@ -45,6 +43,6 @@ pub fn main_window(
                     look_at.read().lat,
                     look_at.read().lon
                 ))
-                .child(format!(" | FOV {:.2}", canvas_state.read().fov.0)),
+                .child(format!(" | FOV {:.2}", fov.read())),
         )
 }

@@ -1,4 +1,4 @@
-use crate::core::logics::commands::ShowVersionCommand;
+use crate::core::logics::commands::{OpenFileCommand, ShowVersionCommand};
 use crate::core::logics::Console;
 use crate::FreyaServices;
 use freya::prelude::*;
@@ -18,7 +18,11 @@ pub fn main_menu(mut console: State<Console<FreyaServices>>) -> impl IntoElement
                 .child(
                     SubMenu::new()
                         .label("File")
-                        .child(MenuButton::new().child("Open"))
+                        .child(
+                            MenuButton::new()
+                                .child("Open")
+                                .on_press(move |_| console.write().execute(&OpenFileCommand {})),
+                        )
                         .child(MenuButton::new().child("Save"))
                         .child(MenuButton::new().child("Close")),
                 )

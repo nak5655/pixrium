@@ -3,9 +3,7 @@ use rfd::{FileDialog, MessageButtons, MessageDialog, MessageLevel};
 use std::path::PathBuf;
 use std::thread::spawn;
 
-pub struct DialogServiceImpl {
-
-}
+pub struct DialogServiceImpl {}
 
 impl DialogServiceImpl {
     fn show_message(&self, title: String, message: String, level: MessageLevel) {
@@ -23,7 +21,7 @@ impl DialogServiceImpl {
 impl DialogService for DialogServiceImpl {
     fn open_image(&self) -> Option<PathBuf> {
         FileDialog::new()
-            .add_filter("HDR image", &["hdr"])
+            //.add_filter("HDR image", &["hdr"])
             .add_filter("image", &["jpg", "png"])
             .set_directory("/")
             .pick_file()
@@ -45,4 +43,3 @@ impl DialogService for DialogServiceImpl {
         self.show_message(title, message, MessageLevel::Error)
     }
 }
-
