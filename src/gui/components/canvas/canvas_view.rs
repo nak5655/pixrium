@@ -3,109 +3,102 @@
     windows_subsystem = "windows"
 )]
 
-use freya::prelude::*;
-use skia_safe::{Color, Data, Image, Paint, Point, Rect, RuntimeEffect, SamplingOptions, TileMode};
-use std::{
-    sync::Arc,
-    time::Instant,
-};
-use glam::{vec2, Vec2, Vec3};
 use crate::core::inputs::{Input, KeyboardInput};
 use crate::core::inputs::{PointerButton, PointerInput};
 use crate::core::logics::Console;
-use crate::core::math::Radian;
-use crate::core::services::{CanvasService, Services};
-use crate::FreyaServices;
+use crate::gui::components::canvas::CanvasShader;
 use crate::gui::components::canvas::CanvasState;
-use crate::gui::components::canvas::hooks::use_sphere_canvas;
+use crate::FreyaServices;
+use freya::prelude::*;
+use glam::{vec2, Vec2};
+use skia_safe::RuntimeEffect;
+use std::collections::HashMap;
 
-#[component]
-pub fn CanvasView(console: Signal<Console<FreyaServices>>, canvas_state: Signal<CanvasState>) -> Element {
-    let platform = use_platform();
-    let (reference, size) = use_node_signal();
+pub fn canvas_view(
+    mut console: State<Console<FreyaServices>>,
+    mut canvas_state: State<CanvasState>,
+) -> impl IntoElement {
+    use_hook(|| {
+        let mut ticker = consume_root_context::<RenderingTicker>();
+        let platform = Platform::get();
 
-    platform.invalidate_drawing_area(size.peek().area);
-    platform.request_animation_frame();
-
-    let canvas = use_sphere_canvas(canvas_state);
-
-    let mut least_viewport_position = use_signal(|| Vec2::default());
-    let mut least_uv_position = use_signal(|| Vec2::default());
-    let mut pressed_button = use_signal(|| None);
-
-    use_memo(move || {
-        let area = size.read().area;
-        canvas_state.with_mut(|s| {
-            s.viewport_bounds.x = area.width();
-            s.viewport_bounds.y = area.height();
+        spawn(async move {
+            loop {
+                ticker.tick().await;
+                platform.send(UserEvent::RequestRedraw);
+            }
         });
     });
 
-    rsx! {
-        rect {
-            canvas_reference: canvas.attribute(),
-            reference,
-            background: "black",
-            width: "fill",
-            height: "fill",
-            onmousedown: move |event| {
-                match get_button(&event) {
-                    Some(button) => {
-                        pressed_button.set(Some(button));
-                        console.write().input(&Input::Pointer(PointerInput::Down {
-                            button,
-                            viewport_position: get_viewport_position(&event),
-                            uv_position: get_uv_position(&event),
-                        }))
-                    },
-                    _ => { }
-                }
-            },
-            onmousemove: move |event| {
-                match *pressed_button.peek() {
-                    Some(button) => {
-                        console.write().input(&Input::Pointer(PointerInput::Move {
-                            button,
-                            viewport_position: get_viewport_position(&event),
-                            uv_position: get_uv_position(&event),
-                        }))
-                    },
-                    _ => { }
-                }
-                least_viewport_position.set(get_viewport_position(&event));
-                least_uv_position.set(get_uv_position(&event));
-            },
-            onmouseup: move |event| {
-                match *pressed_button.peek() {
-                    Some(button) => {
-                        console.write().input(&Input::Pointer(PointerInput::Up {
-                            button,
-                            viewport_position: get_viewport_position(&event),
-                            uv_position: get_uv_position(&event),
-                        }))
-                    },
-                    _ => { }
-                }
-                pressed_button.set(None);
-            },
-            onwheel: move |event| {
-                console.write().input(&Input::Pointer(PointerInput::Scroll {
-                    delta: vec2(event.data.get_delta_x() as f32, event.data.get_delta_y() as f32),
-                    viewport_position: least_viewport_position.peek().clone(),
-                    uv_position: least_uv_position.peek().clone()
-                }))
-            },
-            onglobalkeydown: move |event| {
-                console.write().input(&Input::Keyboard(KeyboardInput::Down {
-                    key: get_key(&event),
+    let mut least_viewport_position = use_state(|| Vec2::default());
+    let mut least_uv_position = use_state(|| Vec2::default());
+    let mut pressed_button = use_state(|| None);
+
+    let runtime_effect = use_hook(|| {
+        let sksl_frag = include_str!("./canvas.sksl");
+        RuntimeEffect::make_for_shader(sksl_frag, None).unwrap()
+    });
+
+    rect()
+        .width(Size::fill())
+        .height(Size::fill())
+        .child(CanvasShader::new(runtime_effect, canvas_state.read().clone()).expanded())
+        .on_mouse_down(move |event| match get_button(&event) {
+            Some(button) => {
+                pressed_button.set(Some(button));
+                console.write().input(&Input::Pointer(PointerInput::Down {
+                    button,
+                    viewport_position: get_viewport_position(&event),
+                    uv_position: get_uv_position(&event),
                 }))
             }
-        }
-    }
+            _ => {}
+        })
+        .on_mouse_move(move |event| {
+            match *pressed_button.peek() {
+                Some(button) => console.write().input(&Input::Pointer(PointerInput::Move {
+                    button,
+                    viewport_position: get_viewport_position(&event),
+                    uv_position: get_uv_position(&event),
+                })),
+                _ => {}
+            }
+            least_viewport_position.set(get_viewport_position(&event));
+            least_uv_position.set(get_uv_position(&event));
+        })
+        .on_mouse_up(move |event| {
+            match *pressed_button.peek() {
+                Some(button) => console.write().input(&Input::Pointer(PointerInput::Up {
+                    button,
+                    viewport_position: get_viewport_position(&event),
+                    uv_position: get_uv_position(&event),
+                })),
+                _ => {}
+            }
+            pressed_button.set(None);
+        })
+        .on_wheel(move |event: Event<WheelEventData>| {
+            console.write().input(&Input::Pointer(PointerInput::Scroll {
+                delta: vec2(event.delta_x as f32, event.delta_y as f32),
+                viewport_position: least_viewport_position.peek().clone(),
+                uv_position: least_uv_position.peek().clone(),
+            }))
+        })
+        .on_global_key_down(move |event| {
+            console.write().input(&Input::Keyboard(KeyboardInput::Down {
+                key: get_key(&event),
+            }))
+        })
+        .on_sized(move |event: Event<SizedEventData>| {
+            canvas_state.with_mut(|mut s| {
+                s.viewport_bounds.x = event.area.width();
+                s.viewport_bounds.y = event.area.height();
+            });
+        })
 }
 
-fn get_button(event: &Event<MouseData>) -> Option<PointerButton> {
-    match event.trigger_button {
+fn get_button(event: &Event<MouseEventData>) -> Option<PointerButton> {
+    match event.button {
         Some(MouseButton::Left) => Some(PointerButton::Left),
         Some(MouseButton::Right) => Some(PointerButton::Right),
         Some(MouseButton::Middle) => Some(PointerButton::Middle),
@@ -114,20 +107,61 @@ fn get_button(event: &Event<MouseData>) -> Option<PointerButton> {
     }
 }
 
-fn get_viewport_position(event: &Event<MouseData>) -> Vec2 {
-    let coords = event.element_coordinates;
+fn get_viewport_position(event: &Event<MouseEventData>) -> Vec2 {
+    let coords = event.element_location;
     Vec2::new(coords.x as f32, coords.y as f32)
 }
 
-fn get_uv_position(event: &Event<MouseData>) -> Vec2 {
+fn get_uv_position(event: &Event<MouseEventData>) -> Vec2 {
     // TODO
-    let coords = event.element_coordinates;
+    let coords = event.element_location;
     Vec2::new(coords.x as f32, coords.y as f32)
 }
 
-fn get_key(event: &Event<KeyboardData>) -> crate::core::inputs::Key {
+fn get_key(event: &Event<KeyboardEventData>) -> crate::core::inputs::Key {
     match &event.key {
         Key::Character(s) => crate::core::inputs::Key::Character(s.clone()),
         _ => crate::core::inputs::Key::Unidentified,
+    }
+}
+
+/// Pass uniform values to a Shader.
+#[derive(Default)]
+pub struct UniformsBuilder {
+    uniforms: HashMap<String, UniformValue>,
+}
+
+/// Uniform value to be passed to a Shader.
+pub enum UniformValue {
+    Float(f32),
+    #[allow(dead_code)]
+    FloatVec(Vec<f32>),
+}
+
+impl UniformsBuilder {
+    /// Set a uniform value.
+    pub fn set(&mut self, name: &str, value: UniformValue) {
+        self.uniforms.insert(name.to_string(), value);
+    }
+
+    /// Build the uniform bytes.
+    pub fn build(&self, shader: &RuntimeEffect) -> Vec<u8> {
+        let mut values = Vec::new();
+
+        for uniform in shader.uniforms().iter() {
+            let value = self.uniforms.get(uniform.name()).unwrap();
+            match &value {
+                UniformValue::Float(f) => {
+                    values.extend(f.to_le_bytes());
+                }
+                UniformValue::FloatVec(f) => {
+                    for n in f {
+                        values.extend(n.to_le_bytes());
+                    }
+                }
+            }
+        }
+
+        values
     }
 }

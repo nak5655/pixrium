@@ -1,7 +1,7 @@
-mod canvas_view;
+mod canvas_shader;
 mod canvas_state;
-pub mod hooks;
+mod canvas_view;
 
-pub use canvas_view::*;
-
+use canvas_shader::*;
 pub use canvas_state::*;
+pub use canvas_view::*;

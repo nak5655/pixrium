@@ -1,11 +1,11 @@
-use freya::prelude::{Readable, Signal, Writable};
-use glam::{Vec2, Vec3};
-use crate::core::math::{LatLon, Radian};
+use crate::core::math::Radian;
 use crate::core::services::CanvasService;
 use crate::gui::components::canvas::CanvasState;
+use freya::prelude::*;
+use glam::{Vec2, Vec3};
 
 pub struct CanvasServiceImpl {
-    pub canvas_state: Signal<CanvasState>
+    pub canvas_state: State<CanvasState>,
 }
 
 impl CanvasService for CanvasServiceImpl {
@@ -30,7 +30,7 @@ impl CanvasService for CanvasServiceImpl {
     }
 
     fn pan(&mut self, look_at: Vec3, right: Vec3) {
-        self.canvas_state.with_mut(|s| {
+        self.canvas_state.with_mut(|mut s| {
             s.look_at = look_at;
             s.right = right;
         });

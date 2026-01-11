@@ -1,20 +1,19 @@
-use std::collections::HashMap;
 use crate::core::data::{Project, Session};
+use crate::core::logics::tools::Tool;
 use crate::core::logics::Console;
-use crate::core::services::Services;
 use crate::core::services::ConfigService;
+use crate::core::services::Services;
+use crate::gui::components::canvas::CanvasState;
 use crate::gui::services::{CanvasServiceImpl, DialogServiceImpl};
 use freya::prelude::*;
-use crate::core::logics::tools::{PanTool, Tool, Tools};
-use crate::gui::components::canvas::CanvasState;
 
-mod gui;
 mod core;
+mod gui;
 
 use crate::gui::windows::main::main_window;
 
 fn main() {
-    launch_with_title(app, "Pixrium")
+    launch(LaunchConfig::new().with_window(WindowConfig::new(app).with_title("Pixrium")))
 }
 
 struct FreyaServices {
@@ -44,32 +43,22 @@ impl Services for FreyaServices {
     }
 }
 
-#[component]
-fn app() -> Element {
-    let canvas_state = use_signal(|| CanvasState::new());
+fn app() -> impl IntoElement {
+    let canvas_state = use_state(|| CanvasState::new());
 
     let services = FreyaServices {
         dialog_service: DialogServiceImpl {},
-        canvas_service: CanvasServiceImpl {
-            canvas_state
-        },
+        canvas_service: CanvasServiceImpl { canvas_state },
         config_service: ConfigService::new(),
     };
 
     let mut session = Session::new();
     session.project = Some(Project::new(1, 1));
 
-    let console = use_signal(|| Console::new(
-        session,
-        services,
-    ));
+    let console = use_state(|| Console::new(session, services));
 
-    rsx! {
-        rect {
-            main_window {
-                console,
-                canvas_state,
-            }
-        }
-    }
+    rect()
+        .center()
+        .expanded()
+        .child(main_window(console, canvas_state))
 }

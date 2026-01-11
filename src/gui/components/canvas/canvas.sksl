@@ -1,0 +1,30 @@
+const float PI  = 3.1415926;
+
+uniform float3 u_look_at;
+uniform float3 u_up;
+uniform float3 u_right;
+uniform float  u_aov;
+
+uniform float2 u_viewport_position;
+uniform float2 u_viewport_size;
+
+// テクスチャ
+uniform float2 u_texture_size;
+uniform shader u_texture;
+
+half4 main(float2 vUV) {
+    float yaw   = u_aov * ((vUV.x - u_viewport_position.x) / u_viewport_size.x - 0.5);
+    float pitch = u_aov * ((vUV.y - u_viewport_position.y) / u_viewport_size.y - 0.5);
+
+    float3 sphereCoord = normalize(u_look_at + yaw * u_right + pitch * u_up);
+
+    float x = atan(sphereCoord.z, sphereCoord.x);
+    float y = atan(sphereCoord.y, sqrt(sphereCoord.x * sphereCoord.x + sphereCoord.z * sphereCoord.z));
+
+    float2 uv = float2(x / (2.0 * PI), y / PI);
+
+    uv.x = (uv.x + 0.5) * u_texture_size.x;
+    uv.y = (uv.y + 0.5) * u_texture_size.y;
+
+    return u_texture.eval(uv);
+}
