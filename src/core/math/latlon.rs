@@ -1,8 +1,7 @@
-use glam::{vec3, Vec3};
+use glam::{Vec3, vec3};
 
 #[derive(PartialEq, Copy, Clone)]
-pub struct LatLon
-{
+pub struct LatLon {
     pub lat: f32,
     pub lon: f32,
 }
@@ -10,7 +9,10 @@ pub struct LatLon
 #[macro_export]
 macro_rules! latlon {
     ($lat:expr, $lon:expr) => {
-        LatLon { lat: $lat, lon: $lon }
+        LatLon {
+            lat: $lat,
+            lon: $lon,
+        }
     };
 }
 
@@ -22,5 +24,13 @@ impl LatLon {
             cos_lat * self.lon.sin(),
             self.lat.sin(),
         )
+    }
+}
+
+impl From<Vec3> for LatLon {
+    fn from(value: Vec3) -> Self {
+        let lat = value.z.asin();
+        let lon = value.y.atan2(value.x);
+        LatLon { lat, lon }
     }
 }

@@ -1,10 +1,9 @@
-use std::collections::HashMap;
-use crate::core::data::{Session};
+use crate::core::data::Session;
 use crate::core::inputs::Input;
 use crate::core::logics::commands::*;
 use crate::core::logics::tools::{EventHandling, PanTool, Tool, Tools, ZoomTool};
 use crate::core::services::Services;
-use crate::FreyaServices;
+use std::collections::HashMap;
 
 pub struct Console<S: Services> {
     pub session: Session,
@@ -23,7 +22,7 @@ impl<S: Services> Console<S> {
             session,
             services,
             tools,
-            active_tools: vec!(Tools::Pan, Tools::Zoom),
+            active_tools: vec![Tools::Pan, Tools::Zoom],
         }
     }
 
@@ -43,15 +42,15 @@ impl<S: Services> Console<S> {
                 Input::Pointer(pointer_input) => {
                     match tool.pointer_input(pointer_input, project, &mut self.services) {
                         EventHandling::Captured => return,
-                        _ => ()
+                        _ => (),
                     }
-                },
+                }
                 Input::Keyboard(keyboard_input) => {
                     match tool.keyboard_input(keyboard_input, project, &mut self.services) {
                         EventHandling::Captured => return,
-                        _ => ()
+                        _ => (),
                     }
-                },
+                }
                 _ => return,
             }
         }

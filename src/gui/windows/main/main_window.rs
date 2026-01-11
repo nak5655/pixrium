@@ -1,85 +1,50 @@
 use crate::core::logics::Console;
-use crate::gui::components::canvas::{CanvasState, CanvasView};
-use crate::gui::components::docks::layer::{LayerDock, LayerDockItemProps};
-use crate::gui::windows::main::main_menu::MainMenu;
+use crate::core::math::LatLon;
+use crate::gui::components::canvas::{canvas_view, CanvasState};
+use crate::gui::components::docks::layer::layer_dock;
+use crate::gui::windows::main::main_menu;
 use crate::FreyaServices;
 use freya::prelude::*;
 
-#[component]
-pub fn main_window(mut console: Signal<Console<FreyaServices>>, mut canvas_state: Signal<CanvasState>) -> Element {
-    let layer_opacity = use_memo(move || {
-        console
-            .read()
-            .session
-            .project
-            .as_ref()
-            .map(|project| match project.layers.first() {
-                Some(layer) => layer.opacity,
-                None => 0.0,
-            })
-    });
+pub fn main_window(
+    mut console: State<Console<FreyaServices>>,
+    mut canvas_state: State<CanvasState>,
+) -> impl IntoElement {
+    let look_at = use_memo(move || LatLon::from(canvas_state.read().look_at));
 
-    let layer_items = use_memo(move || {
-        console.read().session.project.as_ref().map(|project| {
-            project
-                .layers
-                .iter()
-                .map(|layer| LayerDockItemProps {
-                    name: layer.name.clone(),
-                })
-                .collect()
-        })
-    });
-
-    let (_, size) = use_node_signal();
-
-    rsx! {
-        Body {
-            direction: "vertical",
-            width: "fill",
-            height: "fill",
-            MainMenu { console },
-            rect {
-                width: "fill",
-                height: "90%",
-                ResizableContainer {
-                    direction: "horizontal",
-                    ResizablePanel {
-                        initial_size: 70.0,
-                        CanvasView {
-                            console,
-                            canvas_state,
-                        }
-                    },
-                    ResizableHandle { },
-                    ResizablePanel {
-                        initial_size: 30.0,
-                        rect {
-                            direction: "vertical",
-                            width: "fill",
-                            LayerDock {
-                                console,
-                                opacity: layer_opacity.read().clone(),
-                                items: layer_items.read().clone(),
-                            },
-                        }
-                    }
-                },
-            },
-            rect {
-                direction: "horizontal",
-                height: "auto",
-                width: "fill",
-                label {
-                    { format!("{:.2}, {:.2}, {:.2}"
-                        , canvas_state.read().look_at.x
-                        , canvas_state.read().look_at.y
-                        , canvas_state.read().look_at.z) }
-                },
-                label {
-                    { format!("{:.2}", canvas_state.read().fov.0) }
-                },
-            }
-        }
-    }
+    rect()
+        .theme_background()
+        .expanded()
+        .direction(Direction::Vertical)
+        .child(main_menu(console))
+        .child(
+            rect()
+                .width(Size::fill())
+                .height(Size::percent(90.0))
+                .child(
+                    ResizableContainer::new()
+                        .direction(Direction::Horizontal)
+                        .panel(ResizablePanel::new(70.0).child(canvas_view(console, canvas_state)))
+                        .panel(
+                            ResizablePanel::new(30.0).child(
+                                rect()
+                                    .direction(Direction::Vertical)
+                                    .width(Size::fill())
+                                    .child(layer_dock(console)),
+                            ),
+                        ),
+                ),
+        )
+        .child(
+            rect()
+                .direction(Direction::Horizontal)
+                .height(Size::fill())
+                .width(Size::fill())
+                .child(format!(
+                    "LookAt {:.2}, {:.2}",
+                    look_at.read().lat,
+                    look_at.read().lon
+                ))
+                .child(format!(" | FOV {:.2}", canvas_state.read().fov.0)),
+        )
 }
