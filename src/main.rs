@@ -1,10 +1,9 @@
-use crate::core::data::{Project, Session};
+use crate::core::data::Session;
 use crate::core::logics::tools::Tool;
 use crate::core::logics::Console;
 use crate::core::services::ConfigService;
 use crate::core::services::Services;
-use crate::gui::components::canvas::CanvasState;
-use crate::gui::services::{CanvasServiceImpl, DialogServiceImpl};
+use crate::gui::services::DialogServiceImpl;
 use freya::prelude::*;
 
 mod core;
@@ -18,24 +17,14 @@ fn main() {
 
 struct FreyaServices {
     dialog_service: DialogServiceImpl,
-    canvas_service: CanvasServiceImpl,
     config_service: ConfigService,
 }
 
 impl Services for FreyaServices {
     type DialogService = DialogServiceImpl;
-    type CanvasService = CanvasServiceImpl;
 
     fn dialog(&self) -> &Self::DialogService {
         &self.dialog_service
-    }
-
-    fn canvas(&self) -> &Self::CanvasService {
-        &self.canvas_service
-    }
-
-    fn canvas_mut(&mut self) -> &mut Self::CanvasService {
-        &mut self.canvas_service
     }
 
     fn config(&self) -> &ConfigService {
@@ -44,21 +33,14 @@ impl Services for FreyaServices {
 }
 
 fn app() -> impl IntoElement {
-    let canvas_state = use_state(|| CanvasState::new());
+    let mut session = Session::new();
 
     let services = FreyaServices {
         dialog_service: DialogServiceImpl {},
-        canvas_service: CanvasServiceImpl { canvas_state },
         config_service: ConfigService::new(),
     };
 
-    let mut session = Session::new();
-    session.project = Some(Project::new(1, 1));
-
     let console = use_state(|| Console::new(session, services));
 
-    rect()
-        .center()
-        .expanded()
-        .child(main_window(console, canvas_state))
+    rect().center().expanded().child(main_window(console))
 }

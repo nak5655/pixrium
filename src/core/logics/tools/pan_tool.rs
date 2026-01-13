@@ -1,12 +1,9 @@
-use glam::{vec3, Quat, Vec2, Vec3};
-use skia_safe::Point;
-use crate::core::data::Project;
+use crate::core::data::Session;
 use crate::core::inputs::KeyboardInput;
 use crate::core::inputs::PointerInput;
 use crate::core::logics::tools::{EventHandling, Tool};
-use crate::core::math::{LatLon, Radian};
-use crate::core::services::{CanvasService, Services};
-use crate::latlon;
+use crate::core::services::Services;
+use glam::{vec3, Quat, Vec2, Vec3};
 
 pub struct PanTool {
     is_dragging: bool,
@@ -24,40 +21,65 @@ impl PanTool {
     }
 }
 
-impl <S: Services> Tool<S> for PanTool {
-    fn pointer_input(&mut self, input: &PointerInput, project: &mut Project, services: &mut S) -> EventHandling {
+impl<S: Services> Tool<S> for PanTool {
+    fn pointer_input(
+        &mut self,
+        input: &PointerInput,
+        session: &mut Session,
+        services: &mut S,
+    ) -> EventHandling {
         match input {
-            PointerInput::Down { button, viewport_position, uv_position } => {
+            PointerInput::Down {
+                button,
+                viewport_position,
+                uv_position,
+            } => {
                 self.is_dragging = true;
                 self.drag_start_position = *viewport_position;
-                self.drag_start_look_at = services.canvas().look_at();
+                self.drag_start_look_at = session.look_at();
             }
-            PointerInput::Move { button, viewport_position, uv_position } => {
+            PointerInput::Move {
+                button,
+                viewport_position_delta,
+                viewport_position,
+                uv_position_delta,
+                uv_position,
+            } => {
                 if self.is_dragging {
-                    let viewport_bounds = services.canvas().viewport_bounds();
-                    let pointer_delta = self.drag_start_position - *viewport_position;
+                    let viewport_bounds = session.viewport_bounds();
+                    let pointer_delta = *viewport_position_delta;
 
-                    let yaw = -pointer_delta.x / viewport_bounds.x;
-                    let pitch = -pointer_delta.y / viewport_bounds.y;
-                    let quat = Quat::from_axis_angle(services.canvas().up(), yaw)
-                        .mul_quat(Quat::from_axis_angle(services.canvas().right(), -pitch));
+                    let yaw = pointer_delta.x / viewport_bounds.x;
+                    let pitch = pointer_delta.y / viewport_bounds.y;
+                    let quat = Quat::from_axis_angle(session.up(), yaw)
+                        .mul_quat(Quat::from_axis_angle(session.right(), -pitch));
 
-                    let look_at = quat.mul_vec3(self.drag_start_look_at).normalize();
+                    let look_at = quat.mul_vec3(session.look_at()).normalize();
                     let right = calc_right(look_at);
 
-                    services.canvas_mut().pan(look_at, right);
+                    println!("{}", pointer_delta);
+                    session.pan(look_at, right);
                 }
             }
-            PointerInput::Up { button, viewport_position, uv_position } => {
+            PointerInput::Up {
+                button,
+                viewport_position,
+                uv_position,
+            } => {
                 self.is_dragging = false;
             }
-            _ => return EventHandling::None
+            _ => return EventHandling::None,
         }
 
         EventHandling::Captured
     }
 
-    fn keyboard_input(&mut self, input: &KeyboardInput, project: &mut Project, services: &mut S) -> EventHandling {
+    fn keyboard_input(
+        &mut self,
+        input: &KeyboardInput,
+        session: &mut Session,
+        services: &mut S,
+    ) -> EventHandling {
         EventHandling::None
     }
 }

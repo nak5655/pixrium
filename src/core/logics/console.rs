@@ -31,22 +31,18 @@ impl<S: Services> Console<S> {
     }
 
     pub fn input(&mut self, input: &Input) {
-        let project = match &mut self.session.project {
-            Some(project) => project,
-            None => return,
-        };
-
         for tools in &self.active_tools {
             let tool = self.tools.get_mut(tools).expect("invalid tool specified");
             match input {
                 Input::Pointer(pointer_input) => {
-                    match tool.pointer_input(pointer_input, project, &mut self.services) {
+                    match tool.pointer_input(pointer_input, &mut self.session, &mut self.services) {
                         EventHandling::Captured => return,
                         _ => (),
                     }
                 }
                 Input::Keyboard(keyboard_input) => {
-                    match tool.keyboard_input(keyboard_input, project, &mut self.services) {
+                    match tool.keyboard_input(keyboard_input, &mut self.session, &mut self.services)
+                    {
                         EventHandling::Captured => return,
                         _ => (),
                     }

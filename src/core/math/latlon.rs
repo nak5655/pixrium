@@ -1,4 +1,4 @@
-use glam::{Vec3, vec3};
+use glam::{vec3, Vec3};
 
 #[derive(PartialEq, Copy, Clone)]
 pub struct LatLon {
@@ -29,8 +29,8 @@ impl LatLon {
 
 impl From<Vec3> for LatLon {
     fn from(value: Vec3) -> Self {
-        let lat = value.z.asin();
-        let lon = value.y.atan2(value.x);
+        let lat = value.y.asin();
+        let lon = value.z.atan2(value.x);
         LatLon { lat, lon }
     }
 }

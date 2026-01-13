@@ -7,17 +7,13 @@ use crate::core::inputs::{Input, KeyboardInput};
 use crate::core::inputs::{PointerButton, PointerInput};
 use crate::core::logics::Console;
 use crate::gui::components::canvas::CanvasShader;
-use crate::gui::components::canvas::CanvasState;
 use crate::FreyaServices;
 use freya::prelude::*;
 use glam::{vec2, Vec2};
 use skia_safe::RuntimeEffect;
 use std::collections::HashMap;
 
-pub fn canvas_view(
-    mut console: State<Console<FreyaServices>>,
-    mut canvas_state: State<CanvasState>,
-) -> impl IntoElement {
+pub fn canvas_view(mut console: State<Console<FreyaServices>>) -> impl IntoElement {
     use_hook(|| {
         let mut ticker = consume_root_context::<RenderingTicker>();
         let platform = Platform::get();
@@ -42,7 +38,14 @@ pub fn canvas_view(
     rect()
         .width(Size::fill())
         .height(Size::fill())
-        .child(CanvasShader::new(runtime_effect, canvas_state.read().clone()).expanded())
+        .maybe_child(console.read().session.preview().map(|img| {
+            CanvasShader::new(
+                runtime_effect,
+                img,
+                console.peek().session.viewport_state.clone(),
+            )
+            .expanded()
+        }))
         .on_mouse_down(move |event| match get_button(&event) {
             Some(button) => {
                 pressed_button.set(Some(button));
@@ -58,7 +61,10 @@ pub fn canvas_view(
             match *pressed_button.peek() {
                 Some(button) => console.write().input(&Input::Pointer(PointerInput::Move {
                     button,
+                    viewport_position_delta: get_viewport_position(&event)
+                        - *least_viewport_position.read(),
                     viewport_position: get_viewport_position(&event),
+                    uv_position_delta: get_uv_position(&event) - *least_uv_position.read(),
                     uv_position: get_uv_position(&event),
                 })),
                 _ => {}
@@ -90,9 +96,9 @@ pub fn canvas_view(
             }))
         })
         .on_sized(move |event: Event<SizedEventData>| {
-            canvas_state.with_mut(|mut s| {
-                s.viewport_bounds.x = event.area.width();
-                s.viewport_bounds.y = event.area.height();
+            console.with_mut(|mut s| {
+                s.session.viewport_state.bounds.x = event.area.width();
+                s.session.viewport_state.bounds.y = event.area.height();
             });
         })
 }
