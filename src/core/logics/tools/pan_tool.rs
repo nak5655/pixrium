@@ -32,7 +32,6 @@ impl<S: Services> Tool<S> for PanTool {
             PointerInput::Down {
                 button,
                 viewport_position,
-                uv_position,
             } => {
                 self.is_dragging = true;
                 self.drag_start_position = *viewport_position;
@@ -40,14 +39,11 @@ impl<S: Services> Tool<S> for PanTool {
             }
             PointerInput::Move {
                 button,
-                viewport_position_delta,
                 viewport_position,
-                uv_position_delta,
-                uv_position,
             } => {
                 if self.is_dragging {
                     let viewport_bounds = session.viewport_bounds();
-                    let pointer_delta = *viewport_position_delta;
+                    let pointer_delta = viewport_position - self.drag_start_position;
 
                     let yaw = pointer_delta.x / viewport_bounds.x;
                     let pitch = pointer_delta.y / viewport_bounds.y;
@@ -64,11 +60,10 @@ impl<S: Services> Tool<S> for PanTool {
             PointerInput::Up {
                 button,
                 viewport_position,
-                uv_position,
             } => {
                 self.is_dragging = false;
             }
-            _ => return EventHandling::None,
+            _ => return EventHandling::Ignored,
         }
 
         EventHandling::Captured
@@ -80,7 +75,7 @@ impl<S: Services> Tool<S> for PanTool {
         session: &mut Session,
         services: &mut S,
     ) -> EventHandling {
-        EventHandling::None
+        EventHandling::Ignored
     }
 }
 

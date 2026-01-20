@@ -1,6 +1,6 @@
 use glam::Vec2;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum PointerButton {
     Left,
     Right,
@@ -11,23 +11,17 @@ pub enum PointerInput {
     Down {
         button: PointerButton,
         viewport_position: Vec2,
-        uv_position: Vec2,
     },
     Move {
-        button: PointerButton,
-        viewport_position_delta: Vec2,
+        button: Option<PointerButton>,
         viewport_position: Vec2,
-        uv_position_delta: Vec2,
-        uv_position: Vec2,
     },
     Up {
         button: PointerButton,
         viewport_position: Vec2,
-        uv_position: Vec2,
     },
     Scroll {
         delta: Vec2,
         viewport_position: Vec2,
-        uv_position: Vec2,
     },
 }

@@ -18,19 +18,32 @@ pub fn main_window(mut console: State<Console<FreyaServices>>) -> impl IntoEleme
         .direction(Direction::Vertical)
         .child(main_menu(console))
         .child(
-            rect().expanded().height(Size::flex(1.)).child(
-                ResizableContainer::new()
-                    .direction(Direction::Horizontal)
-                    .panel(ResizablePanel::new(70.0).child(canvas_view(console)))
-                    .panel(
-                        ResizablePanel::new(30.0).child(
-                            rect()
-                                .direction(Direction::Vertical)
-                                .width(Size::fill())
-                                .child(layer_dock(console)),
-                        ),
+            rect()
+                .expanded()
+                .height(Size::flex(1.))
+                .direction(Direction::Horizontal)
+                .child(
+                    rect()
+                        .width(Size::auto())
+                        .height(Size::fill())
+                        .child(Button::new().child(svg(freya_icons::lucide::hand())))
+                        .child(Button::new().child(svg(freya_icons::lucide::brush()))),
+                )
+                .child(
+                    rect().expanded().child(
+                        ResizableContainer::new()
+                            .direction(Direction::Horizontal)
+                            .panel(ResizablePanel::new(70.0).child(canvas_view(console)))
+                            .panel(
+                                ResizablePanel::new(30.0).child(
+                                    rect()
+                                        .direction(Direction::Vertical)
+                                        .width(Size::fill())
+                                        .child(layer_dock(console)),
+                                ),
+                            ),
                     ),
-            ),
+                ),
         )
         .child(
             rect()

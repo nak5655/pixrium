@@ -27,7 +27,6 @@ pub fn canvas_view(mut console: State<Console<FreyaServices>>) -> impl IntoEleme
     });
 
     let mut least_viewport_position = use_state(|| Vec2::default());
-    let mut least_uv_position = use_state(|| Vec2::default());
     let mut pressed_button = use_state(|| None);
 
     let runtime_effect = use_hook(|| {
@@ -52,7 +51,6 @@ pub fn canvas_view(mut console: State<Console<FreyaServices>>) -> impl IntoEleme
                 console.write().input(&Input::Pointer(PointerInput::Down {
                     button,
                     viewport_position: get_viewport_position(&event),
-                    uv_position: get_uv_position(&event),
                 }))
             }
             _ => {}
@@ -60,24 +58,18 @@ pub fn canvas_view(mut console: State<Console<FreyaServices>>) -> impl IntoEleme
         .on_mouse_move(move |event| {
             match *pressed_button.peek() {
                 Some(button) => console.write().input(&Input::Pointer(PointerInput::Move {
-                    button,
-                    viewport_position_delta: get_viewport_position(&event)
-                        - *least_viewport_position.read(),
+                    button: Some(button),
                     viewport_position: get_viewport_position(&event),
-                    uv_position_delta: get_uv_position(&event) - *least_uv_position.read(),
-                    uv_position: get_uv_position(&event),
                 })),
                 _ => {}
             }
             least_viewport_position.set(get_viewport_position(&event));
-            least_uv_position.set(get_uv_position(&event));
         })
         .on_mouse_up(move |event| {
             match *pressed_button.peek() {
                 Some(button) => console.write().input(&Input::Pointer(PointerInput::Up {
                     button,
                     viewport_position: get_viewport_position(&event),
-                    uv_position: get_uv_position(&event),
                 })),
                 _ => {}
             }
@@ -87,7 +79,6 @@ pub fn canvas_view(mut console: State<Console<FreyaServices>>) -> impl IntoEleme
             console.write().input(&Input::Pointer(PointerInput::Scroll {
                 delta: vec2(event.delta_x as f32, event.delta_y as f32),
                 viewport_position: least_viewport_position.peek().clone(),
-                uv_position: least_uv_position.peek().clone(),
             }))
         })
         .on_global_key_down(move |event| {
@@ -114,12 +105,6 @@ fn get_button(event: &Event<MouseEventData>) -> Option<PointerButton> {
 }
 
 fn get_viewport_position(event: &Event<MouseEventData>) -> Vec2 {
-    let coords = event.element_location;
-    Vec2::new(coords.x as f32, coords.y as f32)
-}
-
-fn get_uv_position(event: &Event<MouseEventData>) -> Vec2 {
-    // TODO
     let coords = event.element_location;
     Vec2::new(coords.x as f32, coords.y as f32)
 }

@@ -1,15 +1,18 @@
+mod brush_tool;
 mod pan_tool;
 mod zoom_tool;
 
 use crate::core::data::Session;
 use crate::core::inputs::{KeyboardInput, PointerInput};
 use crate::core::services::Services;
+pub use brush_tool::*;
 pub use pan_tool::*;
 pub use zoom_tool::*;
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub enum Tools {
     Pan,
+    Brush,
     Zoom,
 }
 
@@ -33,6 +36,6 @@ where
 
 #[derive(Copy, Clone, Debug)]
 pub enum EventHandling {
-    None,
+    Ignored,
     Captured,
 }

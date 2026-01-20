@@ -25,13 +25,12 @@ impl<S: Services> Tool<S> for ZoomTool {
             PointerInput::Scroll {
                 delta,
                 viewport_position,
-                uv_position,
             } => {
                 let fov = session.fov() * if delta.y < 0.0 { 1.1 } else { 0.9 };
                 session.zoom(Radian(fov));
                 EventHandling::Captured
             }
-            _ => EventHandling::None,
+            _ => EventHandling::Ignored,
         }
     }
 
@@ -52,10 +51,10 @@ impl<S: Services> Tool<S> for ZoomTool {
                     session.zoom(Radian(fov));
                     EventHandling::Captured
                 } else {
-                    EventHandling::None
+                    EventHandling::Ignored
                 }
             }
-            _ => EventHandling::None,
+            _ => EventHandling::Ignored,
         }
     }
 }

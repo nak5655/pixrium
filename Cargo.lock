@@ -1340,6 +1340,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "freya-icons"
+version = "0.4.0-rc.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "13e4866edc8877f666a49079b2df84a289525c73d02e3260493c12478f519437"
+dependencies = [
+ "bytes",
+]
+
+[[package]]
 name = "freya-sdk"
 version = "0.4.0-rc.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2582,6 +2591,7 @@ version = "0.1.0"
 dependencies = [
  "freya",
  "freya-core",
+ "freya-icons",
  "glam",
  "rfd",
  "skia-safe",

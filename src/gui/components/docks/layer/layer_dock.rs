@@ -8,22 +8,43 @@ pub fn layer_dock(mut console: State<Console<FreyaServices>>) -> impl IntoElemen
     rect()
         .direction(Direction::Vertical)
         .width(Size::fill())
-        .child("Layers")
+        .padding(2.)
         .child(
-            Slider::new(move |p| {
-                console.write().execute(&ChangeLayerOpacityCommand {
-                    opacity: (p * 0.01) as f32,
-                })
-            })
-            .size(Size::percent(80.))
-            .value(
-                console
-                    .read()
-                    .session
-                    .selected_layer()
-                    .map(|layer| 100.0 * layer.opacity as f64)
-                    .unwrap_or_default(),
-            ),
+            rect()
+                .width(Size::fill())
+                .padding((2., 4.))
+                .background((224, 224, 224))
+                .child("Layers"),
+        )
+        .child(
+            rect()
+                .direction(Direction::Horizontal)
+                .width(Size::fill())
+                .height(Size::auto())
+                .padding((4., 0., 0., 0.))
+                .child("Opacity")
+                .child(
+                    rect()
+                        .width(Size::fill())
+                        .height(Size::auto())
+                        .padding((0., 8.))
+                        .child(
+                            Slider::new(move |p| {
+                                console.write().execute(&ChangeLayerOpacityCommand {
+                                    opacity: (p * 0.01) as f32,
+                                })
+                            })
+                            .size(Size::fill())
+                            .value(
+                                console
+                                    .read()
+                                    .session
+                                    .selected_layer()
+                                    .map(|layer| 100.0 * layer.opacity as f64)
+                                    .unwrap_or_default(),
+                            ),
+                        ),
+                ),
         )
         .child(
             ScrollView::new()

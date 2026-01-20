@@ -1,7 +1,7 @@
 use crate::core::data::Session;
 use crate::core::inputs::Input;
 use crate::core::logics::commands::*;
-use crate::core::logics::tools::{EventHandling, PanTool, Tool, Tools, ZoomTool};
+use crate::core::logics::tools::{BrushTool, EventHandling, PanTool, Tool, Tools, ZoomTool};
 use crate::core::services::Services;
 use std::collections::HashMap;
 
@@ -16,13 +16,14 @@ impl<S: Services> Console<S> {
     pub fn new(session: Session, services: S) -> Self {
         let mut tools: HashMap<Tools, Box<dyn Tool<S>>> = HashMap::new();
         tools.insert(Tools::Pan, Box::new(PanTool::new()));
+        tools.insert(Tools::Brush, Box::new(BrushTool::new()));
         tools.insert(Tools::Zoom, Box::new(ZoomTool::new()));
 
         Self {
             session,
             services,
             tools,
-            active_tools: vec![Tools::Pan, Tools::Zoom],
+            active_tools: vec![Tools::Brush, Tools::Zoom],
         }
     }
 

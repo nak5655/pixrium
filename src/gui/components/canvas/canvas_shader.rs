@@ -46,9 +46,13 @@ impl ElementExt for CanvasShader {
 
         let mut diff = DiffModifies::empty();
 
+        if (self.image.unique_id() != element.image.unique_id()) {
+            diff.insert(DiffModifies::INNER_LAYOUT);
+        }
+
         let is_equal = self.viewport_state == element.viewport_state;
         if !is_equal {
-            diff.insert(DiffModifies::STYLE);
+            diff.insert(DiffModifies::INNER_LAYOUT);
         }
 
         if self.layout_data != element.layout_data {

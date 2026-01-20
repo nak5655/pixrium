@@ -59,7 +59,9 @@ impl Session {
     pub fn update_preview(&mut self) {
         self.preview = self
             .selected_layer()
-            .map(|layer| raster_from_bitmap(&layer.bitmap))
+            .map(|layer| {
+                return raster_from_bitmap(&layer.bitmap);
+            })
             .flatten();
     }
 
