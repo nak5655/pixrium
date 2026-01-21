@@ -2,6 +2,7 @@ use crate::core::logics::Console;
 use crate::core::math::LatLon;
 use crate::gui::components::canvas::canvas_view;
 use crate::gui::components::docks::layer::layer_dock;
+use crate::gui::components::toolbar;
 use crate::gui::windows::main::main_menu;
 use crate::FreyaServices;
 use freya::prelude::*;
@@ -22,13 +23,7 @@ pub fn main_window(mut console: State<Console<FreyaServices>>) -> impl IntoEleme
                 .expanded()
                 .height(Size::flex(1.))
                 .direction(Direction::Horizontal)
-                .child(
-                    rect()
-                        .width(Size::auto())
-                        .height(Size::fill())
-                        .child(Button::new().child(svg(freya_icons::lucide::hand())))
-                        .child(Button::new().child(svg(freya_icons::lucide::brush()))),
-                )
+                .child(toolbar(console))
                 .child(
                     rect().expanded().child(
                         ResizableContainer::new()

@@ -51,7 +51,7 @@ pub fn layer_dock(mut console: State<Console<FreyaServices>>) -> impl IntoElemen
                 .direction(Direction::Vertical)
                 .width(Size::fill())
                 .height(Size::fill())
-                .children_iter(
+                .children(
                     console
                         .read()
                         .session

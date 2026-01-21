@@ -9,7 +9,7 @@ pub use brush_tool::*;
 pub use pan_tool::*;
 pub use zoom_tool::*;
 
-#[derive(Hash, Eq, PartialEq, Clone, Debug)]
+#[derive(Hash, Eq, PartialEq, Copy, Clone, Debug)]
 pub enum Tools {
     Pan,
     Brush,

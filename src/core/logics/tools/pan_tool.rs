@@ -50,7 +50,7 @@ impl<S: Services> Tool<S> for PanTool {
                     let quat = Quat::from_axis_angle(session.up(), yaw)
                         .mul_quat(Quat::from_axis_angle(session.right(), -pitch));
 
-                    let look_at = quat.mul_vec3(session.look_at()).normalize();
+                    let look_at = quat.mul_vec3(self.drag_start_look_at).normalize();
                     let right = calc_right(look_at);
 
                     println!("{}", pointer_delta);

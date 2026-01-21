@@ -4,12 +4,14 @@ use crate::core::logics::commands::*;
 use crate::core::logics::tools::{BrushTool, EventHandling, PanTool, Tool, Tools, ZoomTool};
 use crate::core::services::Services;
 use std::collections::HashMap;
+use std::iter::once;
 
 pub struct Console<S: Services> {
     pub session: Session,
     pub services: S,
     pub tools: HashMap<Tools, Box<dyn Tool<S>>>,
-    active_tools: Vec<Tools>,
+    fallback_tools: Vec<Tools>,
+    pub active_tool: Tools,
 }
 
 impl<S: Services> Console<S> {
@@ -23,7 +25,8 @@ impl<S: Services> Console<S> {
             session,
             services,
             tools,
-            active_tools: vec![Tools::Brush, Tools::Zoom],
+            fallback_tools: vec![Tools::Pan, Tools::Zoom],
+            active_tool: Tools::Brush,
         }
     }
 
@@ -32,7 +35,7 @@ impl<S: Services> Console<S> {
     }
 
     pub fn input(&mut self, input: &Input) {
-        for tools in &self.active_tools {
+        for tools in once(&self.active_tool).chain(&self.fallback_tools) {
             let tool = self.tools.get_mut(tools).expect("invalid tool specified");
             match input {
                 Input::Pointer(pointer_input) => {
