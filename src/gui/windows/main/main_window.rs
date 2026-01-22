@@ -6,12 +6,10 @@ use crate::gui::components::toolbar;
 use crate::gui::windows::main::main_menu;
 use crate::FreyaServices;
 use freya::prelude::*;
+use glam::Vec3;
 use std::f32::consts::PI;
 
 pub fn main_window(mut console: State<Console<FreyaServices>>) -> impl IntoElement {
-    let look_at = use_memo(move || LatLon::from(console.read().session.viewport_state.look_at));
-    let fov = use_memo(move || console.read().session.viewport_state.fov.0);
-
     rect()
         .theme_background()
         .expanded()
@@ -40,7 +38,7 @@ pub fn main_window(mut console: State<Console<FreyaServices>>) -> impl IntoEleme
                     ),
                 ),
         )
-        .child(
+        .maybe_child(console.read().session.as_ref().map(|session| {
             rect()
                 .main_align(Alignment::End)
                 .padding((2., 4.))
@@ -50,9 +48,9 @@ pub fn main_window(mut console: State<Console<FreyaServices>>) -> impl IntoEleme
                 .width(Size::fill())
                 .child(format!(
                     "{:.2}°N, {:.2}°E",
-                    look_at.read().lat * -180.0 / PI,
-                    look_at.read().lon * 180.0 / PI
+                    <Vec3 as Into<LatLon>>::into(session.look_at()).lat * -180.0 / PI,
+                    <Vec3 as Into<LatLon>>::into(session.look_at()).lon * 180.0 / PI
                 ))
-                .child(format!("FOV {:.2}°", *fov.read() * 180.0 / PI)),
-        )
+                .child(format!("FOV {:.2}°", session.fov() * 180.0 / PI))
+        }))
 }

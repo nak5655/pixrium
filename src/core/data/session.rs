@@ -7,16 +7,16 @@ use skia_safe::images::raster_from_bitmap;
 use skia_safe::Image;
 
 pub struct Session {
-    pub project: Option<Project>,
+    pub project: Project,
     pub selected_layer_index: usize,
     pub viewport_state: ViewportState,
     preview: Option<Image>,
 }
 
 impl Session {
-    pub fn new() -> Self {
+    pub fn new(project: Project) -> Self {
         Self {
-            project: None,
+            project,
             selected_layer_index: 0,
             viewport_state: ViewportState::new(),
             preview: None,
@@ -24,33 +24,20 @@ impl Session {
     }
 
     pub fn layers(&self) -> Vec<&Layer> {
-        match &self.project {
-            Some(project) => project.layers.iter().collect(),
-            None => return vec![],
-        }
+        self.project.layers.iter().collect()
     }
 
     pub fn selected_layer(&self) -> Option<&Layer> {
-        let project = match &self.project {
-            Some(project) => project,
-            None => return None,
-        };
-
-        if 0 <= self.selected_layer_index && self.selected_layer_index < project.layers.len() {
-            Some(&project.layers[self.selected_layer_index])
+        if self.selected_layer_index < self.project.layers.len() {
+            Some(&self.project.layers[self.selected_layer_index])
         } else {
             None
         }
     }
 
     pub fn selected_layer_mut(&mut self) -> Option<&mut Layer> {
-        let mut project = match &mut self.project {
-            Some(project) => project,
-            None => return None,
-        };
-
-        if 0 <= self.selected_layer_index && self.selected_layer_index < project.layers.len() {
-            Some(&mut project.layers[self.selected_layer_index])
+        if self.selected_layer_index < self.project.layers.len() {
+            Some(&mut self.project.layers[self.selected_layer_index])
         } else {
             None
         }

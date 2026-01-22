@@ -1,4 +1,3 @@
-use crate::core::data::Session;
 use crate::core::logics::tools::Tool;
 use crate::core::logics::Console;
 use crate::core::services::ConfigService;
@@ -33,14 +32,12 @@ impl Services for FreyaServices {
 }
 
 fn app() -> impl IntoElement {
-    let mut session = Session::new();
-
     let services = FreyaServices {
         dialog_service: DialogServiceImpl {},
         config_service: ConfigService::new(),
     };
 
-    let console = use_state(|| Console::new(session, services));
+    let console = use_state(|| Console::new(services));
 
     rect().center().expanded().child(main_window(console))
 }

@@ -41,10 +41,8 @@ impl<S: Services> Tool<S> for BrushTool {
                 button,
                 viewport_position,
             } => {
-                let (tex_w, tex_h) = match &mut session.project {
-                    Some(project) => (project.width as i32, project.height as i32),
-                    _ => return EventHandling::Ignored,
-                };
+                let tex_w = session.project.width as i32;
+                let tex_h = session.project.height as i32;
 
                 // Get the UV position before acquiring mutable borrow
                 let mp = viewport_position / session.viewport_bounds();

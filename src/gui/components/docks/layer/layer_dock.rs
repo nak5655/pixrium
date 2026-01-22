@@ -16,7 +16,7 @@ pub fn layer_dock(mut console: State<Console<FreyaServices>>) -> impl IntoElemen
                 .background((224, 224, 224))
                 .child("Layers"),
         )
-        .child(
+        .maybe_child(console.read().session.as_ref().map(|session| {
             rect()
                 .direction(Direction::Horizontal)
                 .width(Size::fill())
@@ -36,28 +36,24 @@ pub fn layer_dock(mut console: State<Console<FreyaServices>>) -> impl IntoElemen
                             })
                             .size(Size::fill())
                             .value(
-                                console
-                                    .read()
-                                    .session
+                                session
                                     .selected_layer()
                                     .map(|layer| 100.0 * layer.opacity as f64)
                                     .unwrap_or_default(),
                             ),
                         ),
-                ),
-        )
-        .child(
+                )
+        }))
+        .maybe_child(console.read().session.as_ref().map(|session| {
             ScrollView::new()
                 .direction(Direction::Vertical)
                 .width(Size::fill())
                 .height(Size::fill())
                 .children(
-                    console
-                        .read()
-                        .session
+                    session
                         .layers()
                         .iter()
                         .map(|item| LayerDockItem::new(item.name.clone()).into()),
-                ),
-        )
+                )
+        }))
 }

@@ -1,39 +1,34 @@
 use crate::core::data::{Layer, Project, Session};
 use crate::core::logics::commands::Command;
-use crate::core::services::DialogService;
-use crate::core::services::Services;
+use crate::core::logics::Console;
+use crate::core::services::{DialogService, Services};
 
 pub struct OpenFileCommand();
 
 impl<S: Services> Command<S> for OpenFileCommand {
-    fn execute(&self, services: &S, session: &mut Session) {
-        match services.dialog().open_image() {
-            Some(image_path) => {
-                match Layer::load(image_path) {
-                    Ok(layer) => {
-                        // プロジェクトが開かれていない場合作成(暫定仕様)
-                        if session.project.is_none() {
-                            session.project = Some(Project::new(
-                                layer.bitmap.width() as usize,
-                                layer.bitmap.height() as usize,
-                            ))
-                        }
-                        if let Some(project) = &mut session.project {
-                            project.layers.push(layer);
+    fn execute(&self, console: &mut Console<S>) {
+        match console.services.dialog().open_image() {
+            Some(image_path) => match Layer::load(image_path) {
+                Ok(layer) => {
+                    let mut project = Project::new(
+                        layer.bitmap.width() as usize,
+                        layer.bitmap.height() as usize,
+                    );
+                    project.layers.push(layer);
 
-                            // 作成したレイヤーを選択
-                            session.selected_layer_index = project.layers.len() - 1;
+                    let mut session = Session::new(project);
+                    session.selected_layer_index = session.project.layers.len() - 1;
+                    session.update_preview();
 
-                            session.update_preview();
-                        }
-                    }
-                    Err(err) => {
-                        services
-                            .dialog()
-                            .show_error("An error occured".to_string(), err);
-                    }
+                    console.session = Some(session);
                 }
-            }
+                Err(err) => {
+                    console
+                        .services
+                        .dialog()
+                        .show_error("An error occured".to_string(), err);
+                }
+            },
             None => return,
         }
     }

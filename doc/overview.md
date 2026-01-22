@@ -13,22 +13,22 @@ flowchart TB
             Project --> Layer
         end
 
-        Command & Tool -.-> Service & Session
-        Console --> Command & Service & Tool & Session
+        Tool -.-> SphereProjection
+        Command -.-> Console
+        Command & Tool -.-> Session
+        Console --> Service & Tool & Session
 
         subgraph math
             SphereProjection
         end
-
-        Tool -.-> SphereProjection
     end
 
     subgraph gui
         direction TB
         MainWindow --> Canvas & MainMenu
-        Canvas -.-> Console
-        MainMenu -.-> Console
         Canvas -.-> State
+        Canvas -.-> Console
+        MainMenu -.-> Console & Command
         CanvasService --> State
         Service -. DI .-> CanvasService & FreyaService
     end

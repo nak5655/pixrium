@@ -37,14 +37,19 @@ pub fn canvas_view(mut console: State<Console<FreyaServices>>) -> impl IntoEleme
     rect()
         .width(Size::fill())
         .height(Size::fill())
-        .maybe_child(console.read().session.preview().map(|img| {
-            CanvasShader::new(
-                runtime_effect,
-                img,
-                console.peek().session.viewport_state.clone(),
-            )
-            .expanded()
-        }))
+        .maybe_child(
+            console
+                .read()
+                .session
+                .as_ref()
+                .map(|session| {
+                    session.preview().map(|img| {
+                        CanvasShader::new(runtime_effect, img, session.viewport_state.clone())
+                            .expanded()
+                    })
+                })
+                .flatten(),
+        )
         .on_mouse_down(move |event| match get_button(&event) {
             Some(button) => {
                 pressed_button.set(Some(button));
@@ -88,8 +93,10 @@ pub fn canvas_view(mut console: State<Console<FreyaServices>>) -> impl IntoEleme
         })
         .on_sized(move |event: Event<SizedEventData>| {
             console.with_mut(|mut s| {
-                s.session.viewport_state.bounds.x = event.area.width();
-                s.session.viewport_state.bounds.y = event.area.height();
+                if let Some(session) = s.session.as_mut() {
+                    session.viewport_state.bounds.x = event.area.width();
+                    session.viewport_state.bounds.y = event.area.height();
+                }
             });
         })
 }
