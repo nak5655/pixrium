@@ -53,7 +53,6 @@ impl<S: Services> Tool<S> for PanTool {
                     let look_at = quat.mul_vec3(self.drag_start_look_at).normalize();
                     let right = calc_right(look_at);
 
-                    println!("{}", pointer_delta);
                     session.pan(look_at, right);
                 }
             }

@@ -1,5 +1,4 @@
 use crate::core::data::ViewportState;
-use crate::gui::components::canvas::{UniformValue, UniformsBuilder};
 use freya::prelude::*;
 use freya_core::data::LayoutData;
 use freya_core::diff_key::DiffKey;
@@ -8,13 +7,14 @@ use freya_core::integration::{ContainerExt, DiffModifies, LayoutExt};
 use skia_safe::{Color, Data, Image, Paint, Rect, RuntimeEffect, SamplingOptions, TileMode};
 use std::any::Any;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::rc::Rc;
 
 pub struct CanvasShader {
     layout_data: LayoutData,
     runtime_effect: RuntimeEffect,
-    image: Image,
     viewport_state: ViewportState,
+    image: Image,
 }
 
 impl CanvasShader {
@@ -33,6 +33,10 @@ impl ElementExt for CanvasShader {
         let Some(shader) = (other.as_ref() as &dyn Any).downcast_ref::<Self>() else {
             return true;
         };
+
+        if (self.image.unique_id() != shader.image.unique_id()) {
+            return true;
+        }
 
         let is_equal = self.viewport_state == shader.viewport_state;
 
@@ -151,5 +155,46 @@ impl From<CanvasShader> for Element {
             element: Rc::new(value),
             elements: Vec::new(),
         }
+    }
+}
+
+/// Pass uniform values to a Shader.
+#[derive(Default)]
+struct UniformsBuilder {
+    uniforms: HashMap<String, UniformValue>,
+}
+
+/// Uniform value to be passed to a Shader.
+enum UniformValue {
+    Float(f32),
+    #[allow(dead_code)]
+    FloatVec(Vec<f32>),
+}
+
+impl UniformsBuilder {
+    /// Set a uniform value.
+    pub fn set(&mut self, name: &str, value: UniformValue) {
+        self.uniforms.insert(name.to_string(), value);
+    }
+
+    /// Build the uniform bytes.
+    pub fn build(&self, shader: &RuntimeEffect) -> Vec<u8> {
+        let mut values = Vec::new();
+
+        for uniform in shader.uniforms().iter() {
+            let value = self.uniforms.get(uniform.name()).unwrap();
+            match &value {
+                UniformValue::Float(f) => {
+                    values.extend(f.to_le_bytes());
+                }
+                UniformValue::FloatVec(f) => {
+                    for n in f {
+                        values.extend(n.to_le_bytes());
+                    }
+                }
+            }
+        }
+
+        values
     }
 }

@@ -5,7 +5,7 @@ use crate::core::math::SphereProjection;
 use crate::core::services::Services;
 use glam::{Vec2, Vec3};
 use skia_safe::canvas::PointMode;
-use skia_safe::{scalar, Canvas, Color, Paint, Point};
+use skia_safe::{scalar, Canvas, Color, Paint, Point, Rect};
 use std::collections::{HashSet, VecDeque};
 use std::f32::consts::PI;
 
@@ -140,7 +140,12 @@ impl<S: Services> Tool<S> for BrushTool {
                     //    width: (max_x - min_x + 1) as f32 / tex_w as f32,
                     //    height: (max_y - min_y + 1) as f32 / tex_h as f32,
                     //});
-                    session.update_preview();
+                    session.update_preview(Rect::new(
+                        min_x as f32,
+                        min_y as f32,
+                        max_x as f32,
+                        max_y as f32,
+                    ));
                 }
             }
             _ => return EventHandling::Ignored,

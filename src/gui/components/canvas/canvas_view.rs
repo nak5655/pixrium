@@ -11,7 +11,6 @@ use crate::FreyaServices;
 use freya::prelude::*;
 use glam::{vec2, Vec2};
 use skia_safe::RuntimeEffect;
-use std::collections::HashMap;
 
 pub fn canvas_view(mut console: State<Console<FreyaServices>>) -> impl IntoElement {
     use_hook(|| {
@@ -37,19 +36,14 @@ pub fn canvas_view(mut console: State<Console<FreyaServices>>) -> impl IntoEleme
     rect()
         .width(Size::fill())
         .height(Size::fill())
-        .maybe_child(
-            console
-                .read()
-                .session
-                .as_ref()
-                .map(|session| {
-                    session.preview().map(|img| {
-                        CanvasShader::new(runtime_effect, img, session.viewport_state.clone())
-                            .expanded()
-                    })
-                })
-                .flatten(),
-        )
+        .maybe_child(console.read().session.as_ref().map(|session| {
+            CanvasShader::new(
+                runtime_effect,
+                session.preview(),
+                session.viewport_state.clone(),
+            )
+            .expanded()
+        }))
         .on_mouse_down(move |event| match get_button(&event) {
             Some(button) => {
                 pressed_button.set(Some(button));
@@ -120,46 +114,5 @@ fn get_key(event: &Event<KeyboardEventData>) -> crate::core::inputs::Key {
     match &event.key {
         Key::Character(s) => crate::core::inputs::Key::Character(s.clone()),
         _ => crate::core::inputs::Key::Unidentified,
-    }
-}
-
-/// Pass uniform values to a Shader.
-#[derive(Default)]
-pub struct UniformsBuilder {
-    uniforms: HashMap<String, UniformValue>,
-}
-
-/// Uniform value to be passed to a Shader.
-pub enum UniformValue {
-    Float(f32),
-    #[allow(dead_code)]
-    FloatVec(Vec<f32>),
-}
-
-impl UniformsBuilder {
-    /// Set a uniform value.
-    pub fn set(&mut self, name: &str, value: UniformValue) {
-        self.uniforms.insert(name.to_string(), value);
-    }
-
-    /// Build the uniform bytes.
-    pub fn build(&self, shader: &RuntimeEffect) -> Vec<u8> {
-        let mut values = Vec::new();
-
-        for uniform in shader.uniforms().iter() {
-            let value = self.uniforms.get(uniform.name()).unwrap();
-            match &value {
-                UniformValue::Float(f) => {
-                    values.extend(f.to_le_bytes());
-                }
-                UniformValue::FloatVec(f) => {
-                    for n in f {
-                        values.extend(n.to_le_bytes());
-                    }
-                }
-            }
-        }
-
-        values
     }
 }

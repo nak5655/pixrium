@@ -3,23 +3,38 @@ use crate::core::data::states::ViewportState;
 use crate::core::data::Layer;
 use crate::core::math::Radian;
 use glam::{Vec2, Vec3};
-use skia_safe::images::raster_from_bitmap;
-use skia_safe::Image;
+use skia_safe::canvas::SrcRectConstraint;
+use skia_safe::{
+    images, surfaces, AlphaType, ColorSpace, ColorType, ISize, Image, ImageInfo, Paint, Rect,
+    Surface,
+};
 
 pub struct Session {
     pub project: Project,
     pub selected_layer_index: usize,
     pub viewport_state: ViewportState,
-    preview: Option<Image>,
+    preview: Surface,
+    snapshot: Image,
 }
 
 impl Session {
     pub fn new(project: Project) -> Self {
+        let preview_image_info = ImageInfo::new(
+            ISize::new(project.width as i32, project.height as i32),
+            ColorType::RGBAF16,
+            AlphaType::Opaque,
+            Some(ColorSpace::new_srgb()),
+        );
+
+        let mut surface = surfaces::raster(&preview_image_info, None, None).unwrap();
+        let snapshot = surface.image_snapshot();
+
         Self {
             project,
             selected_layer_index: 0,
             viewport_state: ViewportState::new(),
-            preview: None,
+            preview: surface,
+            snapshot,
         }
     }
 
@@ -43,17 +58,25 @@ impl Session {
         }
     }
 
-    pub fn update_preview(&mut self) {
-        self.preview = self
-            .selected_layer()
-            .map(|layer| {
-                return raster_from_bitmap(&layer.bitmap);
-            })
-            .flatten();
+    pub fn update_preview(&mut self, bounds: Rect) {
+        let canvas = self.preview.canvas();
+        let paint = Paint::default();
+
+        for layer in self.project.layers.iter().rev() {
+            let layer_image = images::raster_from_bitmap(&layer.bitmap).unwrap();
+            canvas.draw_image_rect(
+                layer_image,
+                Some((&bounds, SrcRectConstraint::Fast)),
+                bounds,
+                &paint,
+            );
+        }
+
+        self.snapshot = self.preview.image_snapshot();
     }
 
-    pub fn preview(&self) -> Option<Image> {
-        self.preview.clone()
+    pub fn preview(&self) -> Image {
+        self.snapshot.clone()
     }
 
     pub fn look_at(&self) -> Vec3 {
