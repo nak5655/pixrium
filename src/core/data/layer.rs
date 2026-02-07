@@ -1,6 +1,6 @@
 use crate::core::utils::{load_bitmap, resize};
 use skia_safe::images::raster_from_bitmap;
-use skia_safe::{AlphaType, Bitmap, Canvas, ColorSpace, ColorType, ISize, Image, ImageInfo};
+use skia_safe::{AlphaType, Bitmap, ColorSpace, ColorType, ISize, Image, ImageInfo};
 use std::path::PathBuf;
 
 pub struct Layer {
@@ -35,8 +35,6 @@ impl Layer {
 
         let mut bitmap = Bitmap::new();
         let _ = bitmap.set_info(&image_info, Some(row_bytes));
-
-        let mut canvas = Canvas::from_bitmap(&bitmap, None).unwrap();
 
         let thumbnail = resize(raster_from_bitmap(&bitmap).unwrap(), ISize::new(256, 128));
 

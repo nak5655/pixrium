@@ -1185,9 +1185,9 @@ checksum = "aa9a19cbb55df58761df49b23516a86d432839add4af60fc256da840f66ed35b"
 
 [[package]]
 name = "freya"
-version = "0.4.0-rc.5"
+version = "0.4.0-rc.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3471765e82468569aa8d44a037d3c7e1da285f68d4230a3f26521dc24c42524"
+checksum = "fc7a622bcc6a6338a9267d06b5ab7c6168d9711ea464c306fbd20bb4ae667515"
 dependencies = [
  "cfg-if",
  "freya-animation",
@@ -1203,9 +1203,9 @@ dependencies = [
 
 [[package]]
 name = "freya-animation"
-version = "0.4.0-rc.5"
+version = "0.4.0-rc.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d57290715a2257ebc93ef98eeb27d4b9197a87ee589ceaa72b75cf8beb7c5b05"
+checksum = "24c1bacd87b407e07f5c9ae180beaa47ea63194460c445b02a2f4510532d62b8"
 dependencies = [
  "async-io",
  "easer",
@@ -1214,9 +1214,9 @@ dependencies = [
 
 [[package]]
 name = "freya-clipboard"
-version = "0.4.0-rc.5"
+version = "0.4.0-rc.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3eeba415bf482275bca030ab65f7b8917bdd90dfb9617f90444b65f5e11486ce"
+checksum = "2be7f7edade990fd5452395dbd15f889e8565b2ffada38996d5cb352d5e48103"
 dependencies = [
  "copypasta",
  "freya-core",
@@ -1224,9 +1224,9 @@ dependencies = [
 
 [[package]]
 name = "freya-components"
-version = "0.4.0-rc.5"
+version = "0.4.0-rc.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34d1bc3690c154f41700db1834536db6cb4afefb064285ef1d3b67c28711cacc"
+checksum = "ce89a90eee62f8471c582949c333ec470329a79ba6fee1441fe8341096a70761"
 dependencies = [
  "accesskit",
  "anyhow",
@@ -1247,9 +1247,9 @@ dependencies = [
 
 [[package]]
 name = "freya-core"
-version = "0.4.0-rc.5"
+version = "0.4.0-rc.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d6ee447774f5b1f86fc64186714ddc37c963aa42c7d3fd90b40283e5ea72c69"
+checksum = "b5c0dc88b4791bdee5c559d97446ee2a77f23e1a7c5e79083b5413fe64ffa6a9"
 dependencies = [
  "accesskit",
  "async-broadcast",
@@ -1276,9 +1276,9 @@ dependencies = [
 
 [[package]]
 name = "freya-devtools"
-version = "0.4.0-rc.5"
+version = "0.4.0-rc.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "280e0256de8ee33f51e36b1145159a1a849d6bbf4cb817f93ffc2b65b969ebd1"
+checksum = "3c5c7e905eb9f63372525d829e927e5b39e897d7881a34906bbd4d851d33f2c6"
 dependencies = [
  "accesskit",
  "anyhow",
@@ -1302,9 +1302,9 @@ dependencies = [
 
 [[package]]
 name = "freya-edit"
-version = "0.4.0-rc.5"
+version = "0.4.0-rc.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34b760e2b5d3f7c6f2bbb32285fae1274d10d842c0d7853a8bafecba2b8b64a0"
+checksum = "0137d9f7cd56d5ab15c12a32d9f566842c0b2f42f8966aeba9945832f8312edf"
 dependencies = [
  "bitflags 2.10.0",
  "freya-clipboard",
@@ -1317,9 +1317,9 @@ dependencies = [
 
 [[package]]
 name = "freya-engine"
-version = "0.4.0-rc.5"
+version = "0.4.0-rc.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5023296fe1af58d17f5c6203bdaf7203f3d02f219888dbb2b67466987142f06"
+checksum = "413288ce081e427ae8cd6b70f9c4c6032cf115c910d9ea48e789b16dbc2385d3"
 dependencies = [
  "bitflags 2.10.0",
  "glutin",
@@ -1328,18 +1328,27 @@ dependencies = [
 
 [[package]]
 name = "freya-icons"
-version = "0.4.0-rc.5"
+version = "0.4.0-rc.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0225f755deba7beab052cbccd77047dde05fe34990e3f1620183965852e3bfc6"
+checksum = "9aadcab214f1b7783fa21fd5604fe6aca65e8133be761e92c9d78fe23baa12d5"
 dependencies = [
  "bytes",
 ]
 
 [[package]]
-name = "freya-sdk"
-version = "0.4.0-rc.5"
+name = "freya-radio"
+version = "0.4.0-rc.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ea4849ca1cd3028d71d4b2f523149fc03c216ab0c43e7568146852c30bb8a47"
+checksum = "4bde34409737606e05ffb6b6b7bc682a0c428205e4d5c4da632a4be29e59c4fc"
+dependencies = [
+ "freya-core",
+]
+
+[[package]]
+name = "freya-sdk"
+version = "0.4.0-rc.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53209b8fb5dc901c252a7872d42da9b30c03088b712a94c8eaf143f973929c1e"
 dependencies = [
  "async-io",
  "freya-core",
@@ -1348,9 +1357,9 @@ dependencies = [
 
 [[package]]
 name = "freya-winit"
-version = "0.4.0-rc.5"
+version = "0.4.0-rc.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f2b29319a109564b66131f538199de21b0d2dd68ebbabace96aa5eb1850299b"
+checksum = "2ea27697c2f4b3c4933bc19d8d93e35312a74bc5626a8823bfa0608b63086ff6"
 dependencies = [
  "accesskit",
  "accesskit_winit",
@@ -2513,9 +2522,9 @@ checksum = "35fb2e5f958ec131621fdd531e9fc186ed768cbe395337403ae56c17a74c68ec"
 
 [[package]]
 name = "pathgraph"
-version = "0.4.0-rc.5"
+version = "0.4.0-rc.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a84dea5ac557df41c594ca19e164a889520fcdd24de0bc526ca946f2aa82fce"
+checksum = "02c12c62bc6965d9624c07b819b3f3fcb7c32cc82a933151044907b901ca6cb8"
 
 [[package]]
 name = "percent-encoding"
@@ -2570,9 +2579,11 @@ dependencies = [
 name = "pixrium"
 version = "0.1.0"
 dependencies = [
+ "async-io",
  "freya",
  "freya-core",
  "freya-icons",
+ "freya-radio",
  "glam",
  "rfd",
  "skia-safe",
@@ -2733,9 +2744,9 @@ checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 
 [[package]]
 name = "ragnarok"
-version = "0.4.0-rc.5"
+version = "0.4.0-rc.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c596bcf6a83c02ed34e3220c8917b9e918adfce3d9e645c8c52ad58e31358ce"
+checksum = "af81326e9fc7d9c2201bcaa5011c93d07f307a6c47dbaf3e5c3779042289f466"
 dependencies = [
  "euclid",
  "hotpath",
@@ -3463,9 +3474,9 @@ checksum = "ab16f14aed21ee8bfd8ec22513f7287cd4a91aa92e44edfe2c17ddd004e92607"
 
 [[package]]
 name = "torin"
-version = "0.4.0-rc.5"
+version = "0.4.0-rc.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df14aecbb1be7515f94a64443844f9e7b52a08c1c3241b217d18cef4b73891be"
+checksum = "0a8a1f378e61bb4c54b1a9641d47e6e192af48101d970454ef4f2911d22898af"
 dependencies = [
  "euclid",
  "itertools 0.14.0",

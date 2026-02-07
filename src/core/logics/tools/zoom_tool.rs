@@ -1,9 +1,8 @@
 use crate::core::data::config::CommandId;
 use crate::core::data::Session;
-use crate::core::inputs::KeyboardInput;
-use crate::core::inputs::PointerInput;
+use crate::core::input::KeyboardInput;
+use crate::core::input::PointerInput;
 use crate::core::logics::tools::{EventHandling, Tool};
-use crate::core::math::Radian;
 use crate::core::services::Services;
 
 pub struct ZoomTool {}
@@ -26,8 +25,9 @@ impl<S: Services> Tool<S> for ZoomTool {
                 delta,
                 viewport_position,
             } => {
-                let fov = session.fov() * if delta.y < 0.0 { 1.1 } else { 0.9 };
-                session.zoom(Radian(fov));
+                let fov = session.state.viewport.fov * if delta.y < 0.0 { 1.1 } else { 0.9 };
+                session.state_mut().viewport.fov = fov;
+                session.update_viewport();
                 EventHandling::Captured
             }
             _ => EventHandling::Ignored,
@@ -43,12 +43,14 @@ impl<S: Services> Tool<S> for ZoomTool {
         match input {
             KeyboardInput::Down { key } => {
                 if services.config().get_key_binding(CommandId::ZoomIn) == *key {
-                    let fov = session.fov() * 0.9;
-                    session.zoom(Radian(fov));
+                    let fov = session.state.viewport.fov * 0.9;
+                    session.state_mut().viewport.fov = fov;
+                    session.update_viewport();
                     EventHandling::Captured
                 } else if services.config().get_key_binding(CommandId::ZoomOut) == *key {
-                    let fov = session.fov() * 1.1;
-                    session.zoom(Radian(fov));
+                    let fov = session.state.viewport.fov * 1.1;
+                    session.state_mut().viewport.fov = fov;
+                    session.update_viewport();
                     EventHandling::Captured
                 } else {
                     EventHandling::Ignored

@@ -1,10 +1,9 @@
-use crate::core::data::ViewportState;
-use freya::prelude::*;
+use crate::gui::components::canvas::canvas_state::CanvasState;
 use freya_core::data::LayoutData;
 use freya_core::diff_key::DiffKey;
 use freya_core::element::{Element, ElementExt, RenderContext};
 use freya_core::integration::{ContainerExt, DiffModifies, LayoutExt};
-use skia_safe::{Color, Data, Image, Paint, Rect, RuntimeEffect, SamplingOptions, TileMode};
+use skia_safe::{Color, Data, Paint, Rect, RuntimeEffect, SamplingOptions, TileMode};
 use std::any::Any;
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -13,17 +12,15 @@ use std::rc::Rc;
 pub struct CanvasShader {
     layout_data: LayoutData,
     runtime_effect: RuntimeEffect,
-    viewport_state: ViewportState,
-    image: Image,
+    state: CanvasState,
 }
 
 impl CanvasShader {
-    pub fn new(runtime_effect: RuntimeEffect, image: Image, viewport_state: ViewportState) -> Self {
+    pub fn new(runtime_effect: RuntimeEffect, state: CanvasState) -> Self {
         Self {
             layout_data: LayoutData::default(),
             runtime_effect,
-            image,
-            viewport_state,
+            state,
         }
     }
 }
@@ -34,13 +31,7 @@ impl ElementExt for CanvasShader {
             return true;
         };
 
-        if (self.image.unique_id() != shader.image.unique_id()) {
-            return true;
-        }
-
-        let is_equal = self.viewport_state == shader.viewport_state;
-
-        !is_equal
+        return self.state != shader.state;
     }
 
     fn diff(&self, other: &std::rc::Rc<dyn ElementExt>) -> DiffModifies {
@@ -50,12 +41,7 @@ impl ElementExt for CanvasShader {
 
         let mut diff = DiffModifies::empty();
 
-        if (self.image.unique_id() != element.image.unique_id()) {
-            diff.insert(DiffModifies::INNER_LAYOUT);
-        }
-
-        let is_equal = self.viewport_state == element.viewport_state;
-        if !is_equal {
+        if self.state != element.state {
             diff.insert(DiffModifies::INNER_LAYOUT);
         }
 
@@ -71,8 +57,12 @@ impl ElementExt for CanvasShader {
     }
 
     fn render(&self, context: RenderContext) {
-        let texture = self
-            .image
+        let frame = match self.state.frame.as_ref() {
+            Some(frame) => frame,
+            None => return,
+        };
+
+        let texture = frame
             .to_shader(
                 Some((TileMode::Repeat, TileMode::Repeat)),
                 SamplingOptions::default(),
@@ -80,10 +70,9 @@ impl ElementExt for CanvasShader {
             )
             .expect("failed to load texture");
 
-        let canvas_state = self.viewport_state;
-        let look_at = canvas_state.look_at;
-        let fov = canvas_state.fov.0;
-        let right = canvas_state.right;
+        let look_at = self.state.look_at;
+        let fov = self.state.fov;
+        let right = self.state.right;
         // 視点ベクトルから見て右ベクトルと直交
         let up = right.cross(look_at).normalize();
 
@@ -114,7 +103,7 @@ impl ElementExt for CanvasShader {
         );
         builder.set(
             "u_texture_size",
-            UniformValue::FloatVec(vec![self.image.width() as f32, self.image.height() as f32]),
+            UniformValue::FloatVec(vec![frame.width() as f32, frame.height() as f32]),
         );
 
         let uniforms = Data::new_copy(&builder.build(&self.runtime_effect));

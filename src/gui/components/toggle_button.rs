@@ -50,8 +50,6 @@ impl ToggleButton {
 
 impl Component for ToggleButton {
     fn render(&self) -> impl IntoElement {
-        let mut status = use_state(|| TileStatus::Idle);
-
         let on_press = {
             let on_select = self.on_select.clone();
             move |e: Event<PressEventData>| {

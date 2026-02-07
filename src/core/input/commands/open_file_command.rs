@@ -1,5 +1,5 @@
-use crate::core::data::{Layer, Project, Session};
-use crate::core::logics::commands::Command;
+use crate::core::data::{Layer, Project};
+use crate::core::input::commands::Command;
 use crate::core::logics::Console;
 use crate::core::services::{DialogService, Services};
 use skia_safe::Rect;
@@ -17,16 +17,15 @@ impl<S: Services> Command<S> for OpenFileCommand {
                     );
                     project.layers.push(layer);
 
-                    let mut session = Session::new(project);
-                    session.selected_layer_index = session.project.layers.len() - 1;
-                    session.update_preview(Rect::new(
+                    let session = console.open_session(project);
+
+                    session.state.selected_layer_index = session.project.layers.len() - 1;
+                    session.update_frame(Rect::new(
                         0.0,
                         0.0,
                         session.project.width as f32,
                         session.project.height as f32,
                     ));
-
-                    console.session = Some(session);
                 }
                 Err(err) => {
                     console

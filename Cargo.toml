@@ -4,9 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-freya = { version = "0.4.0-rc.5", features = ["devtools"] }
-freya-core = { version = "0.4.0-rc.5" }
-freya-icons = { version = "0.4.0-rc.5", features = ["all"] }
+async-io = "2.6"
+freya = { version = "0.4.0-rc.6", features = ["devtools"] }
+freya-core = { version = "0.4.0-rc.6" }
+freya-icons = { version = "0.4.0-rc.6", features = ["all"] }
+freya-radio = { version = "0.4.0-rc.6" }
 skia-safe = { version = "0.91", features = ["gl", "textlayout", "svg"] }
 rfd = "0.17"
 glam = "0.30"

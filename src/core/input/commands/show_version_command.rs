@@ -1,4 +1,4 @@
-use crate::core::logics::commands::Command;
+use crate::core::input::commands::Command;
 use crate::core::logics::Console;
 use crate::core::services::DialogService;
 use crate::core::services::Services;

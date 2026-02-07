@@ -1,6 +1,6 @@
 use crate::core::data::Session;
-use crate::core::inputs::KeyboardInput;
-use crate::core::inputs::PointerInput;
+use crate::core::input::KeyboardInput;
+use crate::core::input::PointerInput;
 use crate::core::logics::tools::{EventHandling, Tool};
 use crate::core::services::Services;
 use glam::{vec3, Quat, Vec2, Vec3};
@@ -30,35 +30,38 @@ impl<S: Services> Tool<S> for PanTool {
     ) -> EventHandling {
         match input {
             PointerInput::Down {
-                button,
+                button: _button,
                 viewport_position,
             } => {
                 self.is_dragging = true;
                 self.drag_start_position = *viewport_position;
-                self.drag_start_look_at = session.look_at();
+                self.drag_start_look_at = session.state.viewport.look_at;
             }
             PointerInput::Move {
-                button,
+                button: _button,
                 viewport_position,
             } => {
                 if self.is_dragging {
-                    let viewport_bounds = session.viewport_bounds();
+                    let viewport_size = session.state.viewport.size;
                     let pointer_delta = viewport_position - self.drag_start_position;
 
-                    let yaw = pointer_delta.x / viewport_bounds.x;
-                    let pitch = pointer_delta.y / viewport_bounds.y;
-                    let quat = Quat::from_axis_angle(session.up(), yaw)
-                        .mul_quat(Quat::from_axis_angle(session.right(), -pitch));
+                    let yaw = pointer_delta.x / viewport_size.x;
+                    let pitch = pointer_delta.y / viewport_size.y;
+                    let quat = Quat::from_axis_angle(session.state.viewport.up(), yaw)
+                        .mul_quat(Quat::from_axis_angle(session.state.viewport.right, -pitch));
 
                     let look_at = quat.mul_vec3(self.drag_start_look_at).normalize();
                     let right = calc_right(look_at);
 
-                    session.pan(look_at, right);
+                    session.state_mut().viewport.look_at = look_at;
+                    session.state_mut().viewport.right = right;
+
+                    session.update_viewport();
                 }
             }
             PointerInput::Up {
-                button,
-                viewport_position,
+                button: _button,
+                viewport_position: _viewport_position,
             } => {
                 self.is_dragging = false;
             }

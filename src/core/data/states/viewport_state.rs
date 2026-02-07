@@ -1,4 +1,3 @@
-use crate::core::math::Radian;
 use glam::{vec3, Vec2, Vec3};
 use std::f32::consts::PI;
 
@@ -6,8 +5,8 @@ use std::f32::consts::PI;
 pub struct ViewportState {
     pub look_at: Vec3,
     pub right: Vec3,
-    pub fov: Radian,
-    pub bounds: Vec2,
+    pub fov: f32,
+    pub size: Vec2,
 }
 
 impl ViewportState {
@@ -15,8 +14,12 @@ impl ViewportState {
         Self {
             look_at: vec3(1.0, 0.0, 0.0),
             right: vec3(0.0, 0.0, 1.0),
-            fov: Radian(PI * 0.25),
-            bounds: Vec2::default(),
+            fov: PI * 0.25,
+            size: Vec2::default(),
         }
+    }
+
+    pub fn up(&self) -> Vec3 {
+        self.right.cross(self.look_at).normalize()
     }
 }

@@ -2,11 +2,11 @@ mod command_id;
 
 pub use self::command_id::*;
 
+use crate::core::input::Key;
 use std::collections::HashMap;
-use crate::core::inputs::Key;
 
 pub struct Config {
-    pub key_bindings: HashMap<CommandId, Key>
+    pub key_bindings: HashMap<CommandId, Key>,
 }
 
 impl Default for Config {
@@ -15,8 +15,6 @@ impl Default for Config {
         key_bindings.insert(CommandId::ZoomIn, Key::Character("[".to_string()));
         key_bindings.insert(CommandId::ZoomOut, Key::Character("]".to_string()));
 
-        Self {
-            key_bindings
-        }
+        Self { key_bindings }
     }
 }

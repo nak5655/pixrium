@@ -1,4 +1,3 @@
-pub mod commands;
 mod console;
 pub mod tools;
 

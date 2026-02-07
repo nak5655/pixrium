@@ -9,6 +9,6 @@ pub use layer_dock_command::*;
 pub use open_file_command::*;
 pub use show_version_command::*;
 
-pub trait Command<S: Services> {
+pub trait Command<S: Services>: Send + Sync {
     fn execute(&self, console: &mut Console<S>);
 }

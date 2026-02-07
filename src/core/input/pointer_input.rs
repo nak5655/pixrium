@@ -7,6 +7,7 @@ pub enum PointerButton {
     Middle,
 }
 
+#[derive(PartialEq, Clone, Copy)]
 pub enum PointerInput {
     Down {
         button: PointerButton,

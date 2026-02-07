@@ -1,9 +1,9 @@
 use crate::core::data::Session;
-use crate::core::inputs::{KeyboardInput, PointerButton, PointerInput};
+use crate::core::input::{KeyboardInput, PointerButton, PointerInput};
 use crate::core::logics::tools::{EventHandling, Tool};
 use crate::core::math::SphereProjection;
 use crate::core::services::Services;
-use glam::{Vec2, Vec3};
+use glam::{vec2, Vec2, Vec3};
 use skia_safe::canvas::PointMode;
 use skia_safe::{scalar, Canvas, Color, Paint, Point, Rect};
 use std::collections::{HashSet, VecDeque};
@@ -21,7 +21,7 @@ impl BrushTool {
     pub fn new() -> Self {
         Self {
             width: 3.0,
-            color: Color::WHITE,
+            color: Color::RED,
             is_dragging: false,
             drag_start_position: Vec2::default(),
             drag_start_look_at: Vec3::default(),
@@ -34,9 +34,17 @@ impl<S: Services> Tool<S> for BrushTool {
         &mut self,
         input: &PointerInput,
         session: &mut Session,
-        services: &mut S,
+        _services: &mut S,
     ) -> EventHandling {
         match input {
+            PointerInput::Down {
+                button: _button,
+                viewport_position,
+            } => {
+                self.is_dragging = true;
+                self.drag_start_position = *viewport_position;
+                self.drag_start_look_at = session.state.viewport.look_at;
+            }
             PointerInput::Move {
                 button,
                 viewport_position,
@@ -45,10 +53,10 @@ impl<S: Services> Tool<S> for BrushTool {
                 let tex_h = session.project.height as i32;
 
                 // Get the UV position before acquiring mutable borrow
-                let mp = viewport_position / session.viewport_bounds();
-                let pixel_scale = session.fov() / 2.0 / PI * tex_w as f32;
+                let mp = viewport_position / vec2(200.0, 200.0); //session.viewport_bounds();
+                let pixel_scale = session.state.viewport.fov / 2.0 / PI * tex_w as f32;
 
-                // while press the left button
+                // while press the left _button
                 if Some(PointerButton::Left) != *button {
                     return EventHandling::Ignored;
                 }
@@ -58,10 +66,10 @@ impl<S: Services> Tool<S> for BrushTool {
 
                     // view座標(0.0~1.0)からテクスチャ座標(-1.0~1.0)への射影関数
                     let proj = SphereProjection::new(
-                        session.fov(),
-                        session.look_at(),
-                        session.up(),
-                        session.right(),
+                        session.state.viewport.fov,
+                        session.state.viewport.look_at,
+                        session.state.viewport.up(),
+                        session.state.viewport.right,
                     );
 
                     // テクスチャのピクセルでの中心座標
@@ -133,20 +141,19 @@ impl<S: Services> Tool<S> for BrushTool {
                     canvas.draw_points(PointMode::Points, points.as_slice(), &paint);
 
                     //// テクスチャの更新範囲
-                    //// TODO: 現状無視して全範囲更新する
-                    //canvas_state.modified_area = Some(iced::Rectangle {
-                    //    x: min_x as f32 as f32,
-                    //    y: min_y as f32 / tex_h as f32,
-                    //    width: (max_x - min_x + 1) as f32 / tex_w as f32,
-                    //    height: (max_y - min_y + 1) as f32 / tex_h as f32,
-                    //});
-                    session.update_preview(Rect::new(
+                    session.update_frame(Rect::new(
                         min_x as f32,
                         min_y as f32,
                         max_x as f32,
                         max_y as f32,
                     ));
                 }
+            }
+            PointerInput::Up {
+                button: _button,
+                viewport_position: _viewport_position,
+            } => {
+                self.is_dragging = false;
             }
             _ => return EventHandling::Ignored,
         }
@@ -156,9 +163,9 @@ impl<S: Services> Tool<S> for BrushTool {
 
     fn keyboard_input(
         &mut self,
-        input: &KeyboardInput,
-        session: &mut Session,
-        services: &mut S,
+        _input: &KeyboardInput,
+        _session: &mut Session,
+        _services: &mut S,
     ) -> EventHandling {
         EventHandling::Ignored
     }

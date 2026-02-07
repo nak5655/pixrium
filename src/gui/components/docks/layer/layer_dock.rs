@@ -1,4 +1,4 @@
-use crate::core::logics::commands::ChangeLayerOpacityCommand;
+use crate::core::input::commands::ChangeLayerOpacityCommand;
 use crate::core::logics::Console;
 use crate::gui::components::docks::layer::LayerDockItem;
 use crate::FreyaServices;
