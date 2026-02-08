@@ -1,5 +1,5 @@
 use crate::core::input::pointer_input::*;
-use skia_safe::ISize;
+use skia_safe::Size;
 
 pub mod commands;
 mod key;
@@ -19,5 +19,5 @@ pub enum InputSignal<S: Services> {
     Keyboard(KeyboardInput),
     Command(Box<dyn Command<S>>),
     ChooseTool(Tools),
-    ViewportResized(ISize),
+    ViewportResized(Size),
 }

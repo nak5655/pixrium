@@ -11,7 +11,7 @@ use std::f32::consts::PI;
 use std::sync::mpsc::Sender;
 
 pub fn main_window(input: State<Sender<InputSignal<FreyaServices>>>) -> impl IntoElement {
-    let canvas_state = use_radio::<MainState, OutputChannel>(OutputChannel::Canvas);
+    let canvas_radio = use_radio::<MainState, OutputChannel>(OutputChannel::Canvas);
 
     rect()
         .theme_background()
@@ -36,7 +36,7 @@ pub fn main_window(input: State<Sender<InputSignal<FreyaServices>>>) -> impl Int
                     ),
                 ),
         )
-        .maybe_child(canvas_state.read().canvas.as_ref().map(|canvas| {
+        .maybe_child(canvas_radio.read().canvas.as_ref().map(|canvas| {
             rect()
                 .main_align(Alignment::End)
                 .padding((2., 4.))

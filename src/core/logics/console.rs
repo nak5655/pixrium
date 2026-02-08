@@ -14,7 +14,6 @@ pub struct Console<S: Services> {
     pub services: S,
     pub tools: HashMap<Tools, Box<dyn Tool<S>>>,
     fallback_tools: Vec<Tools>,
-    pub active_tool: Tools,
 }
 
 impl<S: Services> Console<S> {
@@ -30,7 +29,6 @@ impl<S: Services> Console<S> {
             services,
             tools,
             fallback_tools: vec![Tools::Pan, Tools::Zoom],
-            active_tool: Tools::Brush,
         }
     }
 
@@ -63,7 +61,17 @@ impl<S: Services> Console<S> {
             _ => return,
         };
 
-        for tools in once(&self.active_tool).chain(&self.fallback_tools) {
+        match input {
+            InputSignal::ViewportResized(size) => {
+                session.state.viewport.size = size.clone();
+            }
+            InputSignal::ChooseTool(tool) => {
+                session.state.active_tool = *tool;
+                _ = self.output_tx.send(OutputSignal::ActiveTool(*tool));
+            }
+            _ => (),
+        }
+        for tools in once(&session.state.active_tool.clone()).chain(&self.fallback_tools) {
             let tool = self.tools.get_mut(tools).expect("invalid tool specified");
             match input {
                 InputSignal::Pointer(pointer_input) => {

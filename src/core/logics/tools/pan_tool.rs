@@ -45,8 +45,8 @@ impl<S: Services> Tool<S> for PanTool {
                     let viewport_size = session.state.viewport.size;
                     let pointer_delta = viewport_position - self.drag_start_position;
 
-                    let yaw = pointer_delta.x / viewport_size.x;
-                    let pitch = pointer_delta.y / viewport_size.y;
+                    let yaw = pointer_delta.x / viewport_size.width as f32;
+                    let pitch = pointer_delta.y / viewport_size.height as f32;
                     let quat = Quat::from_axis_angle(session.state.viewport.up(), yaw)
                         .mul_quat(Quat::from_axis_angle(session.state.viewport.right, -pitch));
 

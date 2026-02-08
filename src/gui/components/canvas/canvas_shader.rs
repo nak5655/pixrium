@@ -31,7 +31,8 @@ impl ElementExt for CanvasShader {
             return true;
         };
 
-        return self.state != shader.state;
+        println!("check changed");
+        self.state != shader.state
     }
 
     fn diff(&self, other: &std::rc::Rc<dyn ElementExt>) -> DiffModifies {

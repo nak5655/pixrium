@@ -53,7 +53,11 @@ impl<S: Services> Tool<S> for BrushTool {
                 let tex_h = session.project.height as i32;
 
                 // Get the UV position before acquiring mutable borrow
-                let mp = viewport_position / vec2(200.0, 200.0); //session.viewport_bounds();
+                let mp = viewport_position
+                    / vec2(
+                        session.state.viewport.size.width as f32,
+                        session.state.viewport.size.width as f32,
+                    ); //session.viewport_bounds();
                 let pixel_scale = session.state.viewport.fov / 2.0 / PI * tex_w as f32;
 
                 // while press the left _button

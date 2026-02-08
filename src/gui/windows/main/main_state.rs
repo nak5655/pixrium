@@ -8,7 +8,10 @@ pub struct MainState {
 }
 
 impl MainState {
-    pub fn new(canvas: Option<CanvasState>, toolbar: ToolbarState) -> Self {
-        Self { canvas, toolbar }
+    pub fn new() -> Self {
+        Self {
+            canvas: None,
+            toolbar: ToolbarState::new(),
+        }
     }
 }

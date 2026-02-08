@@ -11,7 +11,7 @@ pub struct SessionState {
 impl SessionState {
     pub fn new() -> Self {
         Self {
-            active_tool: Tools::Brush,
+            active_tool: Tools::Pan,
             selected_layer_index: 0,
             viewport: ViewportState::new(),
         }

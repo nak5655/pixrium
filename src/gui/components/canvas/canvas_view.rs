@@ -11,7 +11,7 @@ use crate::{FreyaServices, OutputChannel};
 use freya::prelude::*;
 use freya_radio::prelude::use_radio;
 use glam::{vec2, Vec2};
-use skia_safe::{ISize, RuntimeEffect};
+use skia_safe::RuntimeEffect;
 use std::sync::mpsc::Sender;
 
 pub fn canvas_view(mut input: State<Sender<InputSignal<FreyaServices>>>) -> impl IntoElement {
@@ -95,10 +95,12 @@ pub fn canvas_view(mut input: State<Sender<InputSignal<FreyaServices>>>) -> impl
                 }))
         })
         .on_sized(move |event: Event<SizedEventData>| {
-            _ = input.write().send(InputSignal::ViewportResized(ISize::new(
-                event.area.width() as i32,
-                event.area.height() as i32,
-            )))
+            _ = input
+                .write()
+                .send(InputSignal::ViewportResized(skia_safe::Size::new(
+                    event.area.width(),
+                    event.area.height(),
+                )))
         })
 }
 

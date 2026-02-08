@@ -4,18 +4,20 @@ use crate::core::output::OutputSignal;
 use crate::core::services::ConfigService;
 use crate::core::services::Services;
 use crate::gui::components::canvas::CanvasState;
-use crate::gui::components::ToolbarState;
 use crate::gui::services::DialogServiceImpl;
 use freya::prelude::*;
-use freya_radio::prelude::{use_init_radio_station, use_radio, RadioChannel};
+use freya_radio::prelude::{use_radio, RadioChannel};
 use std::sync::mpsc;
 
+use freya_radio::prelude::*;
 mod core;
 mod gui;
 
 use crate::gui::windows::main::{main_window, MainState};
 
 fn main() {
+    let radio_station = RadioStation::create_global(MainState::new());
+    let app = move || app(radio_station);
     launch(LaunchConfig::new().with_window(WindowConfig::new(app).with_title("Pixrium")))
 }
 
@@ -44,7 +46,7 @@ pub enum OutputChannel {
 
 impl RadioChannel<MainState> for OutputChannel {}
 
-fn app() -> impl IntoElement {
+fn app(radio_station: RadioStation<MainState, OutputChannel>) -> impl IntoElement {
     let (input_tx, input_rx) = mpsc::channel();
     let (output_tx, output_rx) = mpsc::channel();
 
@@ -64,22 +66,22 @@ fn app() -> impl IntoElement {
         }
     });
 
-    let mut input_tx_state = use_state(move || input_tx);
+    let input_tx_state = use_state(move || input_tx);
 
-    use_init_radio_station::<MainState, OutputChannel>(|| {
-        MainState::new(None, ToolbarState::new())
-    });
-    let mut cavas_radio = use_radio(OutputChannel::Canvas);
+    use_share_radio(move || radio_station);
+    let mut canvas_radio = use_radio::<MainState, OutputChannel>(OutputChannel::Canvas);
 
     spawn(async move {
         let mut ticker = consume_root_context::<RenderingTicker>();
 
         loop {
             if let Ok(output) = output_rx.try_recv() {
-                let mut main_state = cavas_radio.write();
+                let mut main_state = canvas_radio.write();
                 match output {
                     OutputSignal::Frame(image) => match main_state.canvas.as_mut() {
-                        Some(canvas) => canvas.frame = Some(image),
+                        Some(canvas) => {
+                            canvas.frame = Some(image);
+                        }
                         None => (),
                     },
                     OutputSignal::Viewport(viewport) => match main_state.canvas.as_mut() {
@@ -96,6 +98,9 @@ fn app() -> impl IntoElement {
                             main_state.canvas = Some(canvas);
                         }
                     },
+                    OutputSignal::ActiveTool(tool) => {
+                        main_state.toolbar.active_tool = tool;
+                    }
                 }
             };
 
