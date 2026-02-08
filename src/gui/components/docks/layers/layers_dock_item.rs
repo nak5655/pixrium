@@ -1,17 +1,18 @@
 use freya::prelude::*;
 
-pub struct LayerDockItem {
+pub struct LayersDockItem {
     pub name: String,
+    pub opacity: f32,
 }
 
-impl LayerDockItem {
+impl LayersDockItem {
     pub fn new(name: String) -> Self {
-        LayerDockItem { name }
+        LayersDockItem { name, opacity: 1.0 }
     }
 }
 
-impl From<LayerDockItem> for Element {
-    fn from(value: LayerDockItem) -> Self {
+impl From<LayersDockItem> for Element {
+    fn from(value: LayersDockItem) -> Self {
         rect()
             .padding((4., 4.))
             .width(Size::fill())

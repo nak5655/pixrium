@@ -9,7 +9,9 @@ use freya::prelude::*;
 use freya_radio::prelude::{use_radio, RadioChannel};
 use std::sync::mpsc;
 
+use crate::gui::components::docks::layers::{LayersDockItem, LayersState};
 use freya_radio::prelude::*;
+
 mod core;
 mod gui;
 
@@ -42,6 +44,7 @@ impl Services for FreyaServices {
 pub enum OutputChannel {
     Canvas,
     Toolbar,
+    Layers,
 }
 
 impl RadioChannel<MainState> for OutputChannel {}
@@ -100,6 +103,19 @@ fn app(radio_station: RadioStation<MainState, OutputChannel>) -> impl IntoElemen
                     },
                     OutputSignal::ActiveTool(tool) => {
                         main_state.toolbar.active_tool = tool;
+                    }
+                    OutputSignal::Layers(layers) => {
+                        main_state.layers = layers.map(|layers| {
+                            let mut state = LayersState::new();
+                            state.layers = layers
+                                .iter()
+                                .map(|layer| LayersDockItem {
+                                    name: layer.name.clone(),
+                                    opacity: layer.opacity,
+                                })
+                                .collect();
+                            state
+                        });
                     }
                 }
             };

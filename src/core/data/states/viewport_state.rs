@@ -2,7 +2,7 @@ use glam::{vec3, Vec3};
 use skia_safe::Size;
 use std::f32::consts::PI;
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Clone)]
 pub struct ViewportState {
     pub look_at: Vec3,
     pub right: Vec3,

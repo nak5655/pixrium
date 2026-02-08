@@ -1,6 +1,7 @@
 use crate::core::input::InputSignal;
 use crate::core::math::LatLon;
 use crate::gui::components::canvas::canvas_view;
+use crate::gui::components::docks::layers::layers_dock;
 use crate::gui::components::toolbar;
 use crate::gui::windows::main::{main_menu, MainState};
 use crate::{FreyaServices, OutputChannel};
@@ -30,9 +31,14 @@ pub fn main_window(input: State<Sender<InputSignal<FreyaServices>>>) -> impl Int
                         ResizableContainer::new()
                             .direction(Direction::Horizontal)
                             .panel(ResizablePanel::new(70.0).child(canvas_view(input)))
-                            .panel(ResizablePanel::new(30.0).child(
-                                rect().direction(Direction::Vertical).width(Size::fill()), //.child(layer_dock(console)),
-                            )),
+                            .panel(
+                                ResizablePanel::new(30.0).child(
+                                    rect()
+                                        .direction(Direction::Vertical)
+                                        .width(Size::fill())
+                                        .child(layers_dock(input)),
+                                ),
+                            ),
                     ),
                 ),
         )

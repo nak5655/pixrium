@@ -15,9 +15,9 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn new(project: Project, output: Sender<OutputSignal>) -> Self {
+    pub fn new(width: usize, height: usize, output: Sender<OutputSignal>) -> Self {
         let preview_image_info = ImageInfo::new(
-            ISize::new(project.width as i32, project.height as i32),
+            ISize::new(width as i32, height as i32),
             ColorType::RGBAF16,
             AlphaType::Opaque,
             Some(ColorSpace::new_srgb()),
@@ -26,11 +26,13 @@ impl Session {
         let surface = surfaces::raster(&preview_image_info, None, None).unwrap();
         let state = SessionState::new();
 
-        output.send(OutputSignal::Viewport(state.viewport)).unwrap();
+        output
+            .send(OutputSignal::Viewport(state.viewport.clone()))
+            .unwrap();
 
         Self {
             output,
-            project,
+            project: Project::new(width, height),
             state,
             preview: surface,
         }
@@ -75,7 +77,7 @@ impl Session {
         _ = self.output.send(OutputSignal::Frame(snapshot));
         _ = self
             .output
-            .send(OutputSignal::Viewport(self.state.viewport));
+            .send(OutputSignal::Viewport(self.state.viewport.clone()));
     }
 
     pub fn state_mut(&mut self) -> &mut SessionState {
@@ -85,6 +87,6 @@ impl Session {
     pub fn update_viewport(&mut self) {
         _ = self
             .output
-            .send(OutputSignal::Viewport(self.state.viewport));
+            .send(OutputSignal::Viewport(self.state.viewport.clone()));
     }
 }
