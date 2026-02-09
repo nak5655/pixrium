@@ -4,13 +4,14 @@ use crate::core::output::OutputSignal;
 use crate::core::services::ConfigService;
 use crate::core::services::Services;
 use crate::gui::components::canvas::CanvasState;
+use crate::gui::components::docks::layers::{LayersDockItem, LayersState};
 use crate::gui::services::DialogServiceImpl;
 use freya::prelude::*;
+use freya_radio::prelude::*;
 use freya_radio::prelude::{use_radio, RadioChannel};
 use std::sync::mpsc;
-
-use crate::gui::components::docks::layers::{LayersDockItem, LayersState};
-use freya_radio::prelude::*;
+use std::thread;
+use std::time::Duration;
 
 mod core;
 mod gui;
@@ -53,19 +54,19 @@ fn app(radio_station: RadioStation<MainState, OutputChannel>) -> impl IntoElemen
     let (input_tx, input_rx) = mpsc::channel();
     let (output_tx, output_rx) = mpsc::channel();
 
-    spawn(async move {
+    thread::spawn(move || {
         let services = FreyaServices {
             dialog_service: DialogServiceImpl {},
             config_service: ConfigService::new(),
         };
         let mut console = Console::new(services, output_tx);
 
-        let mut ticker = consume_root_context::<RenderingTicker>();
-
         loop {
-            console.update(&input_rx);
-
-            ticker.tick().await;
+            if let Ok(input) = input_rx.try_recv() {
+                console.input(&input)
+            }
+            // 60fps
+            thread::sleep(Duration::from_millis(16));
         }
     });
 
@@ -78,7 +79,7 @@ fn app(radio_station: RadioStation<MainState, OutputChannel>) -> impl IntoElemen
         let mut ticker = consume_root_context::<RenderingTicker>();
 
         loop {
-            if let Ok(output) = output_rx.try_recv() {
+            while let Ok(output) = output_rx.try_recv() {
                 let mut main_state = canvas_radio.write();
                 match output {
                     OutputSignal::Frame(image) => match main_state.canvas.as_mut() {
@@ -118,7 +119,7 @@ fn app(radio_station: RadioStation<MainState, OutputChannel>) -> impl IntoElemen
                         });
                     }
                 }
-            };
+            }
 
             ticker.tick().await;
         }

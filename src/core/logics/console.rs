@@ -8,7 +8,7 @@ use skia_safe::Rect;
 use std::collections::HashMap;
 use std::iter::once;
 use std::path::PathBuf;
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::mpsc::Sender;
 
 pub struct Console<S: Services> {
     output_tx: Sender<OutputSignal>,
@@ -64,12 +64,6 @@ impl<S: Services> Console<S> {
 
             self.session = Some(session);
         })
-    }
-
-    pub fn update(&mut self, input_rx: &Receiver<InputSignal<S>>) {
-        if let Ok(input) = input_rx.try_recv() {
-            self.input(&input)
-        }
     }
 
     pub fn execute(&mut self, command: &dyn Command<S>) {
