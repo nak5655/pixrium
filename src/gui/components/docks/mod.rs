@@ -1,5 +1,6 @@
 use freya::prelude::*;
 
+pub mod brush;
 pub mod color;
 pub mod layers;
 

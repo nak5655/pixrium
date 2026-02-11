@@ -10,7 +10,6 @@ use std::collections::{HashSet, VecDeque};
 use std::f32::consts::PI;
 
 pub struct BrushTool {
-    width: f32,
     is_dragging: bool,
     drag_start_position: Vec2,
     drag_start_look_at: Vec3,
@@ -19,7 +18,6 @@ pub struct BrushTool {
 impl BrushTool {
     pub fn new() -> Self {
         Self {
-            width: 3.0,
             is_dragging: false,
             drag_start_position: Vec2::default(),
             drag_start_look_at: Vec3::default(),
@@ -107,7 +105,7 @@ impl<S: Services> Tool<S> for BrushTool {
                         let dy = vp.y - cp.y;
                         let distance2 = dx * dx + dy * dy;
 
-                        let radius = self.width / pixel_scale;
+                        let radius = session.state.brush_width / pixel_scale;
 
                         min_x = min_x.min(px);
                         max_x = max_x.max(px);

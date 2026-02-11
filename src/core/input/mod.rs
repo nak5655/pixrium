@@ -20,5 +20,6 @@ pub enum InputSignal<S: Services> {
     Command(Box<dyn Command<S>>),
     ChooseTool(Tools),
     ChooseColor(Color4f),
+    ChangeBrushWidth(f32),
     ViewportResized(Size),
 }

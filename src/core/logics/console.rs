@@ -94,6 +94,9 @@ impl<S: Services> Console<S> {
             InputSignal::ChooseColor(color) => {
                 session.state.color = *color;
             }
+            InputSignal::ChangeBrushWidth(brush_width) => {
+                session.state.brush_width = *brush_width;
+            }
             _ => (),
         }
         for tools in once(&session.state.active_tool.clone()).chain(&self.fallback_tools) {

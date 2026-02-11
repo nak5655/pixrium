@@ -5,8 +5,8 @@ gantt
     axisFormat %m/%d
 
     section ver1
-        カラードック: v1a, 2026-02-11, 7d
-        ブラシドック: v1g, after v1a, 3d
+        カラードック: done, v1a, 2026-02-11, 7d
+        ブラシドック: done, v1g, after v1a, 3d
         消しゴムツール: v1c, after v1g, 2d
         レイヤードック: v1b, after v1c, 14d
         保存メニュー: v1d, after v1b, 7d
