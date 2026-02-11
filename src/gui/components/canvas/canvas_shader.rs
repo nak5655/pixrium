@@ -31,7 +31,6 @@ impl ElementExt for CanvasShader {
             return true;
         };
 
-        println!("check changed");
         self.state != shader.state
     }
 

@@ -1,6 +1,7 @@
 use crate::core::input::InputSignal;
 use crate::core::math::LatLon;
 use crate::gui::components::canvas::canvas_view;
+use crate::gui::components::docks::color::color_dock;
 use crate::gui::components::docks::layers::layers_dock;
 use crate::gui::components::toolbar;
 use crate::gui::windows::main::{main_menu, MainState};
@@ -36,6 +37,7 @@ pub fn main_window(input: State<Sender<InputSignal<FreyaServices>>>) -> impl Int
                                     rect()
                                         .direction(Direction::Vertical)
                                         .width(Size::fill())
+                                        .child(color_dock(input))
                                         .child(layers_dock(input)),
                                 ),
                             ),

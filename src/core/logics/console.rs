@@ -91,6 +91,9 @@ impl<S: Services> Console<S> {
                 session.state.active_tool = *tool;
                 _ = self.output_tx.send(OutputSignal::ActiveTool(*tool));
             }
+            InputSignal::ChooseColor(color) => {
+                session.state.color = *color;
+            }
             _ => (),
         }
         for tools in once(&session.state.active_tool.clone()).chain(&self.fallback_tools) {

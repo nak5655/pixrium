@@ -5,13 +5,12 @@ use crate::core::math::SphereProjection;
 use crate::core::services::Services;
 use glam::{vec2, Vec2, Vec3};
 use skia_safe::canvas::PointMode;
-use skia_safe::{scalar, Canvas, Color, Paint, Point, Rect};
+use skia_safe::{scalar, Canvas, Paint, Point, Rect};
 use std::collections::{HashSet, VecDeque};
 use std::f32::consts::PI;
 
 pub struct BrushTool {
     width: f32,
-    color: Color,
     is_dragging: bool,
     drag_start_position: Vec2,
     drag_start_look_at: Vec3,
@@ -21,7 +20,6 @@ impl BrushTool {
     pub fn new() -> Self {
         Self {
             width: 3.0,
-            color: Color::RED,
             is_dragging: false,
             drag_start_position: Vec2::default(),
             drag_start_look_at: Vec3::default(),
@@ -89,6 +87,7 @@ impl<S: Services> Tool<S> for BrushTool {
 
                     // 走査済みのピクセル
                     let mut visited = HashSet::new();
+                    visited.insert((tex_cx, tex_cy));
                     let mut min_x = tex_w;
                     let mut max_x = 0;
                     let mut min_y = tex_h;
@@ -137,10 +136,8 @@ impl<S: Services> Tool<S> for BrushTool {
 
                     // draw
                     let mut paint = Paint::default();
-                    paint.set_color(self.color);
+                    paint.set_color4f(session.state.color, None);
                     paint.set_anti_alias(false);
-                    paint.set_alpha(255);
-                    paint.set_alpha_f(1.0);
 
                     canvas.draw_points(PointMode::Points, points.as_slice(), &paint);
 

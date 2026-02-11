@@ -1,5 +1,5 @@
 use crate::core::input::pointer_input::*;
-use skia_safe::Size;
+use skia_safe::{Color4f, Size};
 
 pub mod commands;
 mod key;
@@ -19,5 +19,6 @@ pub enum InputSignal<S: Services> {
     Keyboard(KeyboardInput),
     Command(Box<dyn Command<S>>),
     ChooseTool(Tools),
+    ChooseColor(Color4f),
     ViewportResized(Size),
 }

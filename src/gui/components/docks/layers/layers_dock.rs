@@ -1,6 +1,7 @@
 use crate::core::input::commands::ChangeLayerOpacityCommand;
 use crate::core::input::InputSignal;
 use crate::gui::components::docks::layers::LayersDockItem;
+use crate::gui::components::docks::Dock;
 use crate::gui::windows::main::MainState;
 use crate::{FreyaServices, OutputChannel};
 use freya::prelude::*;
@@ -10,17 +11,8 @@ use std::sync::mpsc::Sender;
 pub fn layers_dock(mut input: State<Sender<InputSignal<FreyaServices>>>) -> impl IntoElement {
     let layers_radio = use_radio::<MainState, OutputChannel>(OutputChannel::Layers);
 
-    rect()
-        .direction(Direction::Vertical)
-        .width(Size::fill())
-        .padding(2.)
-        .child(
-            rect()
-                .width(Size::fill())
-                .padding((2., 4.))
-                .background((224, 224, 224))
-                .child("Layers"),
-        )
+    Dock::new()
+        .title("Layers")
         .maybe_child(layers_radio.read().layers.as_ref().map(|layers| {
             rect()
                 .direction(Direction::Horizontal)
